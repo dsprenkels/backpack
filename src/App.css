@@ -1,38 +1,53 @@
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+  font-family: monospace;
 }
 
 .App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  font-size: 24px;
+  /* color: white; */
 }
 
 .App-link {
   color: #61dafb;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App-tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  /* background-color: lightblue; */
+}
+
+.App-tag {
+  display: inline-flex;
+  justify-content: flex-start;
+  background-color: #f0f0f0;
+  border-radius: 8px;
+  border: solid 1px black;
+  color: #000000;
+  font-size: 18px;
+  margin: 2px;
+  padding: 2px 4px;
+}
+
+.App-tag:hover {
+  text-decoration: underline;
+}
+
+.App-tag.App-tag-selected {
+  background-color: #ff9d00;
+  color: #000000;
+}
+
+.App-bringListCategory {
+  padding-left: 0;
+  list-style: none outside;
+}
+
+.App-bringListItemCheckbox {
+  margin-right: 1ex;
 }
