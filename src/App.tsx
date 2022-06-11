@@ -63,9 +63,14 @@ function filterDatabase(allItems: FlattenedBringList, tags: Set<string>): Flatte
 }
 
 function Header() {
+  const [header, setHeader] = useState("Paklijst")
   return (
     <header className="App-header">
-      <h1>Paklijst</h1>
+      <input
+      className="App-headerInput"
+        value={header}
+        onChange={(event) => setHeader(event.target.value)}
+      />
     </header>
   )
 }
@@ -107,7 +112,7 @@ function Tag(props: {
 }
 
 function BringList(props: { bringList: BL }) {
-  return <div>
+  return <>
     {props.bringList.map(({ header, items }) => (
       <BringListCategory
         key={header}
@@ -115,11 +120,11 @@ function BringList(props: { bringList: BL }) {
         items={items}
       />
     ))}
-  </div>
+  </>
 }
 
 function BringListCategory(props: { name: string, items: BLI[] }) {
-  return <>
+  return <div className="App-bringListCategoryContainer">
     <h2>{props.name}</h2>
     <ul className="App-bringListCategory">
       {props.items.map((i) => <BringListItem
@@ -127,7 +132,7 @@ function BringListCategory(props: { name: string, items: BLI[] }) {
         item={i.name}
       />)}
     </ul>
-  </>
+  </div>
 }
 
 function BringListItem(props: { item: string }) {
@@ -146,12 +151,15 @@ function App() {
   let tagList = Array.from(collectTags(flattenedDatabase))
   let flattenedBringList = filterDatabase(flattenedDatabase, selectedTags)
   let bringList = unFlattenDatabase(flattenedBringList)
+  let noneSelectedElement = selectedTags.size === 0 ?
+    <div className="App-tagListNoneSelected">no tags selected</div> : <></>
 
   return (
     <div className="App">
       <Header />
       <div className="App-tagListContainer">
         <h3 className="App-tagListHeader">Tags:</h3>
+        {noneSelectedElement}
         <TagList
           allTags={tagList}
           selectedTags={selectedTags}
