@@ -7,31 +7,39 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  /* color: white; */
 }
 
 .App-link {
   color: #61dafb;
 }
 
-.App-tagList {
+.App-tagListContainer {
   display: flex;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: 6px 10px;
-  /* background-color: lightblue; */
+}
+
+.App-tagListHeader .App-tagList {
+  display: inline-flex;
+}
+
+.App-tagList {
+  /* Undo list paddig */
+  padding-left: 0;
 }
 
 .App-tag {
   display: inline-flex;
   justify-content: flex-start;
   background-color: #f0f0f0;
-  border-radius: 8px;
+  border-radius: 4px;
   border: solid 1px black;
   color: #000000;
-  font-size: 18px;
+  font-weight: 500;
   margin: 2px;
   padding: 2px 4px;
+  transition: background-color 0.1s, color 0.1s;
 }
 
 .App-tag:hover {
@@ -39,14 +47,41 @@
 }
 
 .App-tag.App-tag-selected {
-  background-color: #ff9d00;
+  background-color: #5cfa5c;
   color: #000000;
+}
+
+@media print {
+  .App-tag {
+    display: none;
+  }
+  .App-tag.App-tag-selected {
+    display: inline-flex;
+  }
 }
 
 .App-bringListCategory {
   padding-left: 0;
   list-style: none outside;
+  animation: fadein 0.1s linear;
 }
+
+.App-bringListItem {
+  animation: fadein 0.1s linear;
+}
+
+@keyframes fadein {
+  from {
+    /* height: 0%; */
+    opacity: 0;
+  }
+
+  to {
+    /* height: 100%; */
+    opacity: 1;
+  }
+}
+
 
 .App-bringListItemCheckbox {
   margin-right: 1ex;
