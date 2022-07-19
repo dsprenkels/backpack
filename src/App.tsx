@@ -67,7 +67,7 @@ function Header() {
   return (
     <header className="App-header">
       <input
-      className="App-headerInput"
+        className="App-headerInput"
         value={header}
         onChange={(event) => setHeader(event.target.value)}
       />

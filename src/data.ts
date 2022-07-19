@@ -1,3 +1,4 @@
+import { line } from './filter';
 import { BL } from './types';
 
 const PAKLIJST_DATABASE: BL = [
@@ -6,14 +7,15 @@ const PAKLIJST_DATABASE: BL = [
         items: [
             { name: "topjes", default: true },
             { name: "lange broeken", default: true },
-            { name: "korte broeken", tags: ["warm"] },
+            { name: "rokjes/korte broeken", tags: ["warm"] },
             { name: "ondergoed", default: true },
             { name: "sokken", default: true },
             { name: "trui", tags: ["koud"] },
             { name: "jas", default: true },
             { name: "wandelschoenen", tags: ["wandelen"] },
             { name: "zwemkleding", tags: ["zwemmen"] },
-            { name: "badhanddoek", impliedBy: ["zwemkleding"] },
+            { name: "(bad)handdoek", tags: ["zwemmen", "kamperen"] },
+            { name: "zak voor vieze was", default: true },
         ],
     },
     {
@@ -85,7 +87,7 @@ const PAKLIJST_DATABASE: BL = [
         ]
     },
     {
-        header: "Vermaak",
+        header: "Vermaak/werk",
         items: [
             { name: "leesboek/e-reader", default: true },
             { name: "smartphone", default: true },
@@ -97,7 +99,8 @@ const PAKLIJST_DATABASE: BL = [
             { name: "laptop", tags: ["werk"] },
             { name: "oplader laptop", impliedBy: ["laptop"] },
             { name: "oplader smartwatch", impliedBy: [">5 dagen"] },
-            { name: "oordopjes (audio)", tags: ["vliegreis", "kamperen", "werk", "auto"] },
+            { name: "koptelefoon/oordopjes", tags: ["vliegreis", "kamperen", "werk", "auto"] },
+            { name: "pen/papier", tags: ["werk"] }
         ],
     },
     {
@@ -105,16 +108,10 @@ const PAKLIJST_DATABASE: BL = [
         items: [
             { name: "eten voor de eerste dag", tags: ["kamperen"] },
             { name: "flesje", default: true },
+            { name: "extra flesje voor onderweg", tags: ["wandelen", "fietsen", "klimmen"] },
             { name: "twennybar", default: true },
         ]
     },
-    {
-        header: "Overig",
-        items: [
-            { name: "flesje", default: true },
-            { name: "extra flesje voor onderweg", tags: ["wandelen", "fietsen", "klimmen"] },
-        ]
-    }
 ]
 
 export default PAKLIJST_DATABASE
