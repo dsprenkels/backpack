@@ -77,6 +77,7 @@ tandpasta
 deodorant
 cetrizine
 estradiol
+paracetamol [ !lichtgewicht ]
 oordopjes (voor slapen)
 haarelastiekjes
 conditioner
