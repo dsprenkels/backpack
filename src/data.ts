@@ -64,11 +64,12 @@ zekermateriaal
 pofzak
 topo
 
-# Fietsen
-bandenplakset [ fietsen ]
-EHBO-kitje [ fietsen ]
-pompje [ fietsen ]
-smeerolie [ fietsen ]
+# Fietsen [ fietsen ]
+bandenplakset
+inbussleuteltje
+EHBO-kitje
+pompje
+smeerolie
 
 # Toiletspullen/medisch
 tandenborstel
