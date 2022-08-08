@@ -29,13 +29,17 @@
 
 .App-tagListContainer {
   display: flex;
-  align-items: baseline;
   flex-wrap: wrap;
   gap: 6px 10px;
 }
 
-.App-tagListHeader .App-tagList {
+.App-tagListHeader, .App-daysHeader, .App-tagList, .App-daysInput {
   display: inline-flex;
+}
+
+.App-daysInput {
+  margin-left: 1em;
+  max-width: 10ex;
 }
 
 .App-tagListNoneSelected {
@@ -43,7 +47,7 @@
 }
 
 .App-tagList {
-  /* Undo list paddig */
+  /* Undo list padding */
   padding-left: 0;
 }
 
@@ -96,7 +100,41 @@
 }
 
 .App-bringListItem {
+  display: flex;
+  flex-direction: row;
+  width: fit-content;
+  vertical-align: middle;
   animation: fadein 0.1s linear;
+}
+
+.App-bringListItemStriked {
+  text-decoration: line-through;
+}
+
+@media print {
+  .App-bringListItemStriked {
+    display: none;
+  }
+}
+
+.App-bootstrapCross {
+  margin: 0 auto;
+  color: red;
+  opacity: 0.5;
+}
+
+.App-bootstrapCross:hover {
+  opacity: 1.0;
+}
+
+@media print {
+  .App-bootstrapCross {
+    display: none;
+  }
+}
+
+.App-bootstrapCrossActive {
+  opacity: 1.0;
 }
 
 @keyframes fadein {

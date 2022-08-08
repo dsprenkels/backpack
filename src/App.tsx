@@ -1,66 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
-import { BL, BLI, BLC } from './types';
 import DB from './data';
-
-type FlattenedBringListItem = BLI & { category: string }
-type FlattenedBringList = FlattenedBringListItem[]
-
-function flattenDatabase(db: BL): FlattenedBringList {
-  let items = []
-  for (let category of db) {
-    for (let item of category.items) {
-      items.push(Object.assign({ category: category.header }, item))
-    }
-  }
-  return items
-}
-
-function unFlattenDatabase(items: FlattenedBringList): BL {
-  let categories = new Map<string, BLC>()
-  for (let item of items) {
-    let category = item.category
-    if (!categories.has(category)) {
-      categories.set(category, { header: category, items: [] })
-    }
-    categories.get(category)!!.items.push(item)
-  }
-  return Array.from(categories.values())
-}
-
-function collectTags(items: FlattenedBringList): Set<string> {
-  let tags = new Set<string>();
-  for (let item of items) {
-    for (let tag of item.tags ?? []) {
-      tags.add(tag)
-    }
-  }
-  return tags
-}
-
-function filterDatabase(allItems: FlattenedBringList, tags: Set<string>): FlattenedBringList {
-  function filterDatabaseInner(items: FlattenedBringList, tags: Set<string>, collectedItems: Set<string>): FlattenedBringList {
-    return items.filter((elem) => {
-      let isDefault = Boolean(elem.default)
-      let matchesTag = (elem.tags ?? []).some((tag) => tags.has(tag))
-      let isImplied = (elem.impliedBy ?? []).some((other) => collectedItems.has(other))
-      return isDefault || matchesTag || isImplied
-    })
-  }
-
-  let items: FlattenedBringList = []
-  let collectedItems = new Set<string>()
-  const MAX_ITERATIONS = 50
-  for (let i = 0; i < MAX_ITERATIONS; i++) {
-    let filteredItems = filterDatabaseInner([...allItems], tags, collectedItems)
-    collectedItems = new Set(filteredItems.map((elem) => elem.name))
-    if (filteredItems.length === items.length) {
-      return filteredItems
-    }
-    items = filteredItems
-  }
-  throw Error(`filtering took too long (${MAX_ITERATIONS} iterations)`)
-}
+import { BringList as BL, BringListCategory as BLC, collectTagsFromDB, exprIsMatch, Filter } from './filterspec';
 
 function Header() {
   const [header, setHeader] = useState("Paklijst")
@@ -81,8 +22,6 @@ function TagList(
     selectedTags: Set<string>,
     onSelectTag: (tag: string, enabled: boolean) => void,
   }) {
-  // TODO: Let tagnames have an specificity level that determines their order
-  // and resolves conflicts between different bringlist instructions
   let tagElems = props.allTags.map(
     (tagName) => <Tag
       key={tagName}
@@ -111,49 +50,89 @@ function Tag(props: {
   </li>
 }
 
-function BringList(props: { bringList: BL }) {
+function BringList(props: { bringList: BL, filter: Filter }) {
+  let shouldRenderCategory = (blc: BLC) =>
+    exprIsMatch(props.filter, blc.tags) &&
+    blc.items.some((item) => exprIsMatch(props.filter, item.tags))
   return <>
-    {props.bringList.map(({ header, items }) => (
-      <BringListCategory
-        key={header}
-        name={header}
-        items={items}
-      />
-    ))}
+    {props.bringList
+      .filter((blc) => shouldRenderCategory(blc))
+      .map((cat) => (
+        <BringListCategory
+          key={cat.category}
+          blc={cat}
+          filter={props.filter}
+        />
+      ))}
   </>
 }
 
-function BringListCategory(props: { name: string, items: BLI[] }) {
+function BringListCategory(props: { blc: BLC, filter: Filter }) {
   return <div className="App-bringListCategoryContainer">
-    <h2>{props.name}</h2>
+    <h2>{props.blc.category}</h2>
     <ul className="App-bringListCategory">
-      {props.items.map((i) => <BringListItem
-        key={i.name}
-        item={i.name}
-      />)}
+      {props.blc.items
+        .filter((item) => exprIsMatch(props.filter, item.tags))
+        .map((i) => <BringListItem
+          key={i.name}
+          item={i.name}
+        />)}
     </ul>
   </div>
 }
 
 function BringListItem(props: { item: string }) {
-  return <li className='App-bringListItem'>
+  let [isStriked, setIsStriked] = useState(false)
+  let className;
+  if (isStriked) {
+    className = "App-bringListItem App-bringListItemStriked"
+  }
+  else {
+    className = "App-bringListItem"
+  }
+  return <li className={className}>
     <input className="App-bringListItemCheckbox"
       type="checkbox"
+      disabled={isStriked}
     />{props.item}
+    <span onClick={() => setIsStriked(!isStriked)}>
+      <BootstrapCross className="App-bootstrapCross" height={16} />
+    </span>
   </li>
+}
+
+function BootstrapCross(props: { className?: string, width?: number, height?: number }) {
+  return <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className={props.className}
+    width={props.width ?? 16}
+    height={props.height ?? 16}
+    fill="currentColor"
+    viewBox="0 0 16 16">
+    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z" />
+  </svg>
+}
+
+function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
+  let set = new Set(_set)
+  if (enabled) {
+    set.add(key)
+  } else {
+    set.delete(key)
+  }
+  return set
 }
 
 function App() {
   // TODO: Persist state in localstorage?
-  const [selectedTags, setSelectedTags] = useState(new Set<string>())
+  const [tags, setTags] = useState(new Set<string>())
+  const [days, setDays] = useState(3)
 
-  let flattenedDatabase = flattenDatabase(DB)
-  let tagList = Array.from(collectTags(flattenedDatabase))
-  let flattenedBringList = filterDatabase(flattenedDatabase, selectedTags)
-  let bringList = unFlattenDatabase(flattenedBringList)
-  let noneSelectedElement = selectedTags.size === 0 ?
+  let tagList = Array.from(collectTagsFromDB(DB))
+  let filter = { tags, days }
+
+  let noneSelectedElement = tags.size === 0 ?
     <div className="App-tagListNoneSelected">no tags selected</div> : <></>
-
   return (
     <div className="App">
       <Header />
@@ -162,20 +141,27 @@ function App() {
         {noneSelectedElement}
         <TagList
           allTags={tagList}
-          selectedTags={selectedTags}
-          onSelectTag={(tag: string, enabled: boolean) => setSelectedTags((_selectedTags) => {
-            let selectedTags = new Set(_selectedTags)
-            if (enabled) {
-              selectedTags.add(tag);
-            } else {
-              selectedTags.delete(tag);
-            }
-            return selectedTags;
-          })
+          selectedTags={tags}
+          onSelectTag={(tag: string, enabled: boolean) =>
+            setTags((_tags) =>
+              setAssign(_tags, tag, enabled)
+            )
           }
         />
       </div>
-      <BringList bringList={bringList}></BringList>
+      <div className="App-daysContainer">
+        <h3 className="App-daysHeader">Days:</h3>
+        <input className="App-daysInput"
+          type="number"
+          min="0"
+          value={days}
+          onChange={(e) => setDays(e.target.valueAsNumber)}
+        />
+      </div>
+      <BringList
+        bringList={DB}
+        filter={filter}
+      ></BringList>
     </div>
   );
 }
