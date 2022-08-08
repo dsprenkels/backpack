@@ -7,6 +7,7 @@ import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, I
 
 const LOCALSTORAGE_PREFIX = "nl.ds7s.paklijst."
 const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
+const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
 const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
 const LOCALSTORAGE_DAYS = `${LOCALSTORAGE_PREFIX}days`
 const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
@@ -64,6 +65,8 @@ function Tag(props: {
 function BringList(props: {
   bringList: BL,
   filter: Filter,
+  checkedItems: Set<string>,
+  updateCheckedItems: (name: string, isChecked: boolean) => void,
   strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
@@ -81,6 +84,8 @@ function BringList(props: {
           blcIsTrue={isTrue}
           blcIsFalse={isFalse}
           filter={props.filter}
+          checkedItems={props.checkedItems}
+          updateCheckedItems={props.updateCheckedItems}
           strikedItems={props.strikedItems}
           updateStrikedItems={props.updateStrikedItems}
         />
@@ -93,6 +98,8 @@ function BringListCategory(props: {
   blcIsTrue: string[],
   blcIsFalse: string[],
   filter: Filter,
+  checkedItems: Set<string>,
+  updateCheckedItems: (name: string, isChecked: boolean) => void,
   strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
@@ -117,6 +124,8 @@ function BringListCategory(props: {
           isTrue={isTrue}
           isFalse={isFalse}
           filter={props.filter}
+          isChecked={props.checkedItems.has(item.name)}
+          setIsChecked={(isChecked) => props.updateCheckedItems(item.name, isChecked)}
           isStriked={props.strikedItems.has(item.name)}
           setIsStriked={(isStriked) => props.updateStrikedItems(item.name, isStriked)}
         />)}
@@ -129,6 +138,8 @@ function BringListItem(props: {
   isTrue: string[],
   isFalse: string[],
   filter: Filter,
+  isChecked: boolean,
+  setIsChecked: (isChecked: boolean) => void,
   isStriked: boolean,
   setIsStriked: (isStriked: boolean) => void,
 }) {
@@ -142,6 +153,8 @@ function BringListItem(props: {
   return <li className="App-bringListItem" >
     <input className="App-bringListItemCheckbox"
       type="checkbox"
+      onChange={(event) => props.setIsChecked(event.target.checked)}
+      checked={props.isChecked}
       disabled={props.isStriked}
     />
     <span className={props.isStriked ? "App-bringListItemStriked" : ""}>
@@ -202,6 +215,9 @@ function App() {
   const [days, setDays] = React.useState(loadDays)
   useEffect(() => saveDays(days), [days])
 
+  const [checkedItems, setCheckedItems] = React.useState(loadCheckedItems)
+  useEffect(() => saveCheckedItems(checkedItems), [checkedItems])
+
   const [strikedItems, setStrikedItems] = React.useState(loadStrikedItems)
   useEffect(() => saveStrikedItems(strikedItems), [strikedItems])
 
@@ -238,6 +254,10 @@ function App() {
       <BringList
         bringList={DB}
         filter={filter}
+        checkedItems={checkedItems}
+        updateCheckedItems={(name: string, isChecked: boolean) => {
+          setCheckedItems(setAssign(checkedItems, name, isChecked))
+        }}
         strikedItems={strikedItems}
         updateStrikedItems={(name: string, isStriked: boolean) => {
           setStrikedItems(setAssign(strikedItems, name, isStriked))
@@ -284,6 +304,14 @@ function loadTags(): Set<string> {
 
 function saveTags(tags: Set<string>) {
   return saveStringSet(LOCALSTORAGE_TAGS, tags)
+}
+
+function loadCheckedItems(): Set<string> {
+  return loadStringSet(LOCALSTORAGE_CHECKED)
+}
+
+function saveCheckedItems(strikedItems: Set<string>) {
+  return saveStringSet(LOCALSTORAGE_CHECKED, strikedItems)
 }
 
 function loadStrikedItems(): Set<string> {
