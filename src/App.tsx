@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import './App.css';
 import DB from './data';
-import  * as filterspec from './filterspec';
+import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 
 function Header() {
-  const [header, setHeader] = useState("Paklijst")
+  const [header, setHeader] = React.useState("Paklijst")
   return (
     <header className="App-header">
       <input
@@ -54,6 +54,8 @@ function Tag(props: {
 function BringList(props: {
   bringList: BL,
   filter: Filter,
+  strikedItems: Set<string>,
+  updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   let annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
     [cat, filterspec.exprIsMatch(props.filter, cat.tags)]
@@ -69,6 +71,8 @@ function BringList(props: {
           blcIsTrue={isTrue}
           blcIsFalse={isFalse}
           filter={props.filter}
+          strikedItems={props.strikedItems}
+          updateStrikedItems={props.updateStrikedItems}
         />
       ))}
   </>
@@ -78,7 +82,9 @@ function BringListCategory(props: {
   blc: BLC,
   blcIsTrue: string[],
   blcIsFalse: string[],
-  filter: Filter
+  filter: Filter,
+  strikedItems: Set<string>,
+  updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   let annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)]
@@ -101,6 +107,8 @@ function BringListCategory(props: {
           isTrue={isTrue}
           isFalse={isFalse}
           filter={props.filter}
+          isStriked={props.strikedItems.has(item.name)}
+          setIsStriked={(isStriked) => props.updateStrikedItems(item.name, isStriked)}
         />)}
     </ul>
   </div>
@@ -111,9 +119,9 @@ function BringListItem(props: {
   isTrue: string[],
   isFalse: string[],
   filter: Filter,
+  isStriked: boolean,
+  setIsStriked: (isStriked: boolean) => void,
 }) {
-  let [isStriked, setIsStriked] = useState(false)
-
   let itemText = props.item.name
   let everyNDays = props.item.everyNDays
   if (everyNDays !== undefined) {
@@ -124,13 +132,13 @@ function BringListItem(props: {
   return <li className="App-bringListItem" >
     <input className="App-bringListItemCheckbox"
       type="checkbox"
-      disabled={isStriked}
+      disabled={props.isStriked}
     />
-    <span className={isStriked ? "App-bringListItemStriked" : ""}>
-    {itemText}
+    <span className={props.isStriked ? "App-bringListItemStriked" : ""}>
+      {itemText}
     </span>
-    
-    <span onClick={() => setIsStriked(!isStriked)}>
+
+    <span onClick={() => props.setIsStriked(!props.isStriked)}>
       <BootstrapCross className="App-bootstrapCross" height={16} />
     </span>
     <BringListExplain isTrue={props.isTrue} isFalse={props.isFalse} />
@@ -140,10 +148,14 @@ function BringListItem(props: {
 function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
   let explainList = []
   for (let tag of props.isTrue) {
-    explainList.push(<span className="App-BringListExplainTrue">{tag}</span>)
+    explainList.push(
+      <span key={tag} className="App-BringListExplainTrue">{tag}</span>
+    )
   }
   for (let tag of props.isFalse) {
-    explainList.push(<span className="App-BringListExplainFalse">!{tag}</span>)
+    explainList.push(
+      <span key={tag} className="App-BringListExplainFalse">!{tag}</span>
+    )
   }
 
   // Intersperse commas
@@ -183,10 +195,72 @@ function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
   return set
 }
 
+function loadStringSet(key: string): Set<string> {
+  let empty = new Set<string>()
+  let json = localStorage.getItem(key)
+  if (json === null) {
+    return empty
+  }
+  let tagsArray = JSON.parse(json)
+  if (tagsArray.constructor !== Array) {
+    console.error(`localStorage has invalid '${key}' array: '${json}'`)
+    localStorage.removeItem(key)
+    return empty
+  }
+  return new Set<string>(tagsArray)
+}
+
+function saveStringSet(key: string, set: Set<string>) {
+  let array = Array.from(set)
+  let json = JSON.stringify(array)
+  localStorage.setItem(key, json)
+}
+
+function loadTags(): Set<string> {
+  return loadStringSet("tags")
+}
+
+function saveTags(tags: Set<string>) {
+  return saveStringSet("tags", tags)
+}
+
+function loadDays(): number {
+  let defaultDays = 3
+  let json = localStorage.getItem("days")
+  if (json === null) {
+    return defaultDays
+  }
+  let days = JSON.parse(json)
+  if (typeof days !== "number") {
+    console.error(`localStorage has invalid 'days' number: '${json}'`)
+    localStorage.removeItem("days")
+    return defaultDays
+  }
+  return days
+}
+
+function saveDays(days: number) {
+  let json = JSON.stringify(days)
+  localStorage.setItem("days", json)
+}
+
+function loadStrikedItems(): Set<string> {
+  return loadStringSet("striked")
+}
+
+function saveStrikedItems(strikedItems: Set<string>) {
+  return saveStringSet("striked", strikedItems)
+}
+
 function App() {
-  // TODO: Persist state in localstorage?
-  const [tags, setTags] = useState(new Set<string>())
-  const [days, setDays] = useState(3)
+  const [tags, setTags] = React.useState(loadTags)
+  useEffect(() => saveTags(tags), [tags])
+
+  const [days, setDays] = React.useState(loadDays)
+  useEffect(() => saveDays(days), [days])
+
+  const [strikedItems, setStrikedItems] = React.useState(loadStrikedItems)
+  useEffect(() => saveStrikedItems(strikedItems), [strikedItems])
 
   let tagList = Array.from(filterspec.collectTagsFromDB(DB))
   let filter = { tags, days }
@@ -221,6 +295,16 @@ function App() {
       <BringList
         bringList={DB}
         filter={filter}
+        strikedItems={strikedItems}
+        updateStrikedItems={(name: string, isStriked: boolean) => {
+          let strikedItems_ = new Set(strikedItems)
+          if (isStriked) {
+            strikedItems_.add(name)
+          } else {
+            strikedItems_.delete(name)
+          }
+          setStrikedItems(strikedItems_)
+        }}
       ></BringList>
     </div>
   );
