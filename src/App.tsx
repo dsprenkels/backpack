@@ -4,6 +4,13 @@ import DB from './data';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 
+
+const LOCALSTORAGE_PREFIX = "nl.ds7s.paklijst."
+const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
+const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
+const LOCALSTORAGE_DAYS = `${LOCALSTORAGE_PREFIX}days`
+
+
 function Header() {
   const [header, setHeader] = React.useState("Paklijst")
   return (
@@ -217,23 +224,23 @@ function saveStringSet(key: string, set: Set<string>) {
 }
 
 function loadTags(): Set<string> {
-  return loadStringSet("tags")
+  return loadStringSet(LOCALSTORAGE_TAGS)
 }
 
 function saveTags(tags: Set<string>) {
-  return saveStringSet("tags", tags)
+  return saveStringSet(LOCALSTORAGE_TAGS, tags)
 }
 
 function loadDays(): number {
   let defaultDays = 3
-  let json = localStorage.getItem("days")
+  let json = localStorage.getItem(LOCALSTORAGE_DAYS)
   if (json === null) {
     return defaultDays
   }
   let days = JSON.parse(json)
   if (typeof days !== "number") {
-    console.error(`localStorage has invalid 'days' number: '${json}'`)
-    localStorage.removeItem("days")
+    console.error(`localStorage has invalid '${LOCALSTORAGE_DAYS}' number: '${json}'`)
+    localStorage.removeItem(LOCALSTORAGE_DAYS)
     return defaultDays
   }
   return days
@@ -241,15 +248,15 @@ function loadDays(): number {
 
 function saveDays(days: number) {
   let json = JSON.stringify(days)
-  localStorage.setItem("days", json)
+  localStorage.setItem(LOCALSTORAGE_DAYS, json)
 }
 
 function loadStrikedItems(): Set<string> {
-  return loadStringSet("striked")
+  return loadStringSet(LOCALSTORAGE_STRIKED)
 }
 
 function saveStrikedItems(strikedItems: Set<string>) {
-  return saveStringSet("striked", strikedItems)
+  return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
 }
 
 function App() {
@@ -297,13 +304,7 @@ function App() {
         filter={filter}
         strikedItems={strikedItems}
         updateStrikedItems={(name: string, isStriked: boolean) => {
-          let strikedItems_ = new Set(strikedItems)
-          if (isStriked) {
-            strikedItems_.add(name)
-          } else {
-            strikedItems_.delete(name)
-          }
-          setStrikedItems(strikedItems_)
+          setStrikedItems(setAssign(strikedItems, name, isStriked))
         }}
       ></BringList>
     </div>
