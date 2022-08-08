@@ -152,7 +152,7 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
     explainJSX.push(explainList[idx])
     let isLast = idx === explainList.length - 1
     if (!isLast) {
-      explainJSX.push(", ")
+      explainJSX.push(" & ")
     }
   }
 
