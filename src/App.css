@@ -119,6 +119,7 @@
 
 .App-BringListExplain {
   font-size: small;
+  font-weight: normal;
   color: darkgray;
   vertical-align: middle;
   margin-inline: 1em;
