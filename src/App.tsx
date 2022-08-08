@@ -213,7 +213,7 @@ function App() {
         <h3 className="App-daysHeader">Dagen:</h3>
         <input className="App-daysInput"
           type="number"
-          min="0"
+          min="1"
           value={days}
           onChange={(e) => setDays(e.target.valueAsNumber)}
         />
