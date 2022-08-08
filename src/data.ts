@@ -89,12 +89,13 @@ scheermesje [ >=5 ]
 scheerschuim [ >=5 ]
 sporttape [ wandelen | klimmen ]
 mondmaskers [ buitenland ]
-zelftests
+zelftesten [ !lichtgewicht ]
 
 # Administratie
 Secrid
 paspoort [ buitenland ]
 reispapieren (verzekering etc.)
+medisch paspoort [ buitenland ]
 gele boekje [ buitenland ]
 creditcard [ buitenland ]
 vliegtickets [ vliegreis ]

@@ -2,6 +2,7 @@ import { P } from "./parse"
 import * as parse from "./parse"
 
 export type Filter = { tags: Set<string>, days: number }
+export type ExprIsMatchResult = { isMatch: boolean, isTrue: string[], isFalse: string[] }
 
 export type BringList = BringListCategory[]
 export interface BringListCategory { category: string, tags: TagExpr, items: Item[] }
@@ -189,7 +190,7 @@ export let filterLine = new class FilterLineParser extends P<FilterLine> {
 export function parseDatabase(input: string): BringList {
     let lines = input.split("\n")
     let enumeratedLines: [number, string][] = lines.map((line, index) => [index, line])
-    let nonEmptyLines = enumeratedLines.filter(([idx, line]) => 
+    let nonEmptyLines = enumeratedLines.filter(([idx, line]) =>
         line.trim() !== "" && !line.trim().startsWith("//")
     )
     let database: BringList = []
@@ -225,31 +226,64 @@ export function parseDatabase(input: string): BringList {
     return database
 }
 
-export function exprIsMatch(filter: Filter, expr: TagExpr): boolean {
+export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
+    const noMatch = { isMatch: false, isTrue: [], isFalse: [] }
+    let isMatch
     switch (expr.kind) {
         case "BinOpExpr":
-            return ({
-                "&": (x1: boolean, x2: boolean) => x1 && x2,
-                "|": (x1: boolean, x2: boolean) => x1 || x2,
-                "^": (x1: boolean, x2: boolean) => x1 !== x2,
-            })[expr.op](
-                exprIsMatch(filter, expr.left),
-                exprIsMatch(filter, expr.right),
-            )
+            let left = exprIsMatch(filter, expr.left)
+            let right = exprIsMatch(filter, expr.right)
+            let allTrue = left.isTrue.concat(right.isTrue)
+            let allFalse = left.isFalse.concat(right.isFalse)
+            if (expr.op === "&" && !left.isMatch) {
+                return left
+            } else if (expr.op === "&") {
+                return {
+                    isMatch: right.isMatch,
+                    isTrue: allTrue,
+                    isFalse: allFalse,
+                }
+            } else if (expr.op === "|" && left.isMatch) {
+                return left
+            } else if (expr.op === "|") {
+                return {
+                    isMatch: right.isMatch,
+                    isTrue: right.isTrue,
+                    isFalse: right.isFalse,
+                }
+            } else if (expr.op === "^" && (left.isMatch !== !right.isMatch)) {
+                return {
+                    isMatch: true,
+                    isTrue: allTrue,
+                    isFalse: allFalse,
+                }
+            }
+            return noMatch
         case "DaysRange":
             if (expr.lo !== undefined && filter.days < expr.lo) {
-                return false
+                return noMatch
             }
             if (expr.hi !== undefined && filter.days >= expr.hi) {
-                return false
+                return noMatch
             }
-            return true
+            return { isMatch: true, isTrue: [], isFalse: [] }
         case "NotExpr":
-            return !exprIsMatch(filter, expr.inner)
+            let inner = exprIsMatch(filter, expr.inner)
+            isMatch = !inner.isMatch
+            if (!isMatch) {
+                return noMatch
+            }
+            return {
+                isMatch, isTrue: inner.isTrue, isFalse: inner.isFalse
+            }
         case "TagIdent":
-            return filter.tags.has(expr.ident)
+            isMatch = filter.tags.has(expr.ident)
+            if (!isMatch) {
+                return { isMatch, isTrue: [], isFalse: [expr.ident] }
+            }
+            return { isMatch, isTrue: [expr.ident], isFalse: [] }
         case "Empty":
-            return true
+            return { isMatch: true, isTrue: [], isFalse: [] }
         default:
             throw new Error("unreachable")
     }

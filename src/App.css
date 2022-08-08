@@ -117,6 +117,29 @@
   animation: fadein 0.1s linear;
 }
 
+.App-BringListExplain {
+  font-size: small;
+  color: darkgray;
+  vertical-align: middle;
+  margin-inline: 1em;
+  display: none;
+}
+
+.App-BringListExplainTrue {
+  color: darkgreen;
+}
+.App-BringListExplainFalse {
+  color: darkred;
+}
+
+.App-bringListCategoryContainer:hover .App-bringListCategoryHeader .App-BringListExplain {
+  display: inline;
+}
+
+.App-bringListItem:hover .App-BringListExplain {
+  display: inline;
+}
+
 .App-bringListItemStriked {
   text-decoration: line-through;
 }

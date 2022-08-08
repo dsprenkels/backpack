@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
 import DB from './data';
-import { BringList as BL, BringListCategory as BLC, collectTagsFromDB, exprIsMatch, Filter, Item } from './filterspec';
+import  * as filterspec from './filterspec';
+import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 
 function Header() {
   const [header, setHeader] = useState("Paklijst")
@@ -50,41 +51,68 @@ function Tag(props: {
   </li>
 }
 
-function BringList(props: { bringList: BL, filter: Filter }) {
-  let shouldRenderCategory = (blc: BLC) =>
-    exprIsMatch(props.filter, blc.tags) &&
-    blc.items.some((item) => exprIsMatch(props.filter, item.tags))
+function BringList(props: {
+  bringList: BL,
+  filter: Filter,
+}) {
+  let annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
+    [cat, filterspec.exprIsMatch(props.filter, cat.tags)]
+
   return <>
     {props.bringList
-      .filter((blc) => shouldRenderCategory(blc))
-      .map((cat) => (
+      .map(annotate)
+      .filter(([_, { isMatch }]) => isMatch)
+      .map(([blc, { isTrue, isFalse }]) => (
         <BringListCategory
-          key={cat.category}
-          blc={cat}
+          key={blc.category}
+          blc={blc}
+          blcIsTrue={isTrue}
+          blcIsFalse={isFalse}
           filter={props.filter}
         />
       ))}
   </>
 }
 
-function BringListCategory(props: { blc: BLC, filter: Filter }) {
+function BringListCategory(props: {
+  blc: BLC,
+  blcIsTrue: string[],
+  blcIsFalse: string[],
+  filter: Filter
+}) {
+  let annotate = (item: Item): [Item, ExprIsMatchResult] =>
+    [item, filterspec.exprIsMatch(props.filter, item.tags)]
+
   return <div className="App-bringListCategoryContainer">
-    <h2>{props.blc.category}</h2>
+    <h2 className="App-bringListCategoryHeader">
+      {props.blc.category}
+      <BringListExplain
+        isTrue={props.blcIsTrue}
+        isFalse={props.blcIsFalse}
+      />
+    </h2>
     <ul className="App-bringListCategory">
       {props.blc.items
-        .filter((item) => exprIsMatch(props.filter, item.tags))
-        .map((i) => <BringListItem
-          key={i.name}
-          item={i}
+        .map(annotate)
+        .filter(([_, { isMatch }]) => isMatch)
+        .map(([item, { isTrue, isFalse }]) => <BringListItem
+          key={item.name}
+          item={item}
+          isTrue={isTrue}
+          isFalse={isFalse}
           filter={props.filter}
         />)}
     </ul>
   </div>
 }
 
-function BringListItem(props: { item: Item, filter: Filter }) {
+function BringListItem(props: {
+  item: Item,
+  isTrue: string[],
+  isFalse: string[],
+  filter: Filter,
+}) {
   let [isStriked, setIsStriked] = useState(false)
-  let liElem = useRef<HTMLLIElement>(null)
 
   let itemText = props.item.name
   let everyNDays = props.item.everyNDays
@@ -93,23 +121,44 @@ function BringListItem(props: { item: Item, filter: Filter }) {
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
-  let className= "App-bringListItem"
-  if (isStriked) {
-    className = "App-bringListItem App-bringListItemStriked"
-  }
-
-  return <li
-  ref={liElem}
-  className={className}
-  >
+  return <li className="App-bringListItem" >
     <input className="App-bringListItemCheckbox"
       type="checkbox"
       disabled={isStriked}
-    />{itemText}
+    />
+    <span className={isStriked ? "App-bringListItemStriked" : ""}>
+    {itemText}
+    </span>
+    
     <span onClick={() => setIsStriked(!isStriked)}>
       <BootstrapCross className="App-bootstrapCross" height={16} />
     </span>
+    <BringListExplain isTrue={props.isTrue} isFalse={props.isFalse} />
   </li>
+}
+
+function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
+  let explainList = []
+  for (let tag of props.isTrue) {
+    explainList.push(<span className="App-BringListExplainTrue">{tag}</span>)
+  }
+  for (let tag of props.isFalse) {
+    explainList.push(<span className="App-BringListExplainFalse">!{tag}</span>)
+  }
+
+  // Intersperse commas
+  let explainJSX = []
+  for (let idx = 0; idx < explainList.length; idx++) {
+    explainJSX.push(explainList[idx])
+    let isLast = idx === explainList.length - 1
+    if (!isLast) {
+      explainJSX.push(", ")
+    }
+  }
+
+  return <span className="App-BringListExplain">[
+    {explainJSX}
+    ]</span>
 }
 
 function BootstrapCross(props: { className?: string, width?: number, height?: number }) {
@@ -139,7 +188,7 @@ function App() {
   const [tags, setTags] = useState(new Set<string>())
   const [days, setDays] = useState(3)
 
-  let tagList = Array.from(collectTagsFromDB(DB))
+  let tagList = Array.from(filterspec.collectTagsFromDB(DB))
   let filter = { tags, days }
 
   let noneSelectedElement = tags.size === 0 ?
@@ -161,7 +210,7 @@ function App() {
         />
       </div>
       <div className="App-daysContainer">
-        <h3 className="App-daysHeader">Days:</h3>
+        <h3 className="App-daysHeader">Dagen:</h3>
         <input className="App-daysInput"
           type="number"
           min="0"
