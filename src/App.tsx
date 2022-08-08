@@ -9,10 +9,13 @@ const LOCALSTORAGE_PREFIX = "nl.ds7s.paklijst."
 const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
 const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
 const LOCALSTORAGE_DAYS = `${LOCALSTORAGE_PREFIX}days`
+const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
 
 
 function Header() {
-  const [header, setHeader] = React.useState("Paklijst")
+  const [header, setHeader] = React.useState(loadHeader)
+  useEffect(() => saveHeader(header), [header])
+
   return (
     <header className="App-header">
       <input
@@ -192,73 +195,6 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
   </svg>
 }
 
-function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
-  let set = new Set(_set)
-  if (enabled) {
-    set.add(key)
-  } else {
-    set.delete(key)
-  }
-  return set
-}
-
-function loadStringSet(key: string): Set<string> {
-  let empty = new Set<string>()
-  let json = localStorage.getItem(key)
-  if (json === null) {
-    return empty
-  }
-  let tagsArray = JSON.parse(json)
-  if (tagsArray.constructor !== Array) {
-    console.error(`localStorage has invalid '${key}' array: '${json}'`)
-    localStorage.removeItem(key)
-    return empty
-  }
-  return new Set<string>(tagsArray)
-}
-
-function saveStringSet(key: string, set: Set<string>) {
-  let array = Array.from(set)
-  let json = JSON.stringify(array)
-  localStorage.setItem(key, json)
-}
-
-function loadTags(): Set<string> {
-  return loadStringSet(LOCALSTORAGE_TAGS)
-}
-
-function saveTags(tags: Set<string>) {
-  return saveStringSet(LOCALSTORAGE_TAGS, tags)
-}
-
-function loadDays(): number {
-  let defaultDays = 3
-  let json = localStorage.getItem(LOCALSTORAGE_DAYS)
-  if (json === null) {
-    return defaultDays
-  }
-  let days = JSON.parse(json)
-  if (typeof days !== "number") {
-    console.error(`localStorage has invalid '${LOCALSTORAGE_DAYS}' number: '${json}'`)
-    localStorage.removeItem(LOCALSTORAGE_DAYS)
-    return defaultDays
-  }
-  return days
-}
-
-function saveDays(days: number) {
-  let json = JSON.stringify(days)
-  localStorage.setItem(LOCALSTORAGE_DAYS, json)
-}
-
-function loadStrikedItems(): Set<string> {
-  return loadStringSet(LOCALSTORAGE_STRIKED)
-}
-
-function saveStrikedItems(strikedItems: Set<string>) {
-  return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
-}
-
 function App() {
   const [tags, setTags] = React.useState(loadTags)
   useEffect(() => saveTags(tags), [tags])
@@ -309,6 +245,93 @@ function App() {
       ></BringList>
     </div>
   );
+}
+
+function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
+  let set = new Set(_set)
+  if (enabled) {
+    set.add(key)
+  } else {
+    set.delete(key)
+  }
+  return set
+}
+
+function loadStringSet(key: string): Set<string> {
+  let empty = new Set<string>()
+  let json = localStorage.getItem(key)
+  if (json === null) {
+    return empty
+  }
+  let tagsArray = JSON.parse(json)
+  if (tagsArray.constructor !== Array) {
+    console.error(`localStorage has invalid '${key}' array: '${json}'`)
+    localStorage.removeItem(key)
+    return empty
+  }
+  return new Set<string>(tagsArray)
+}
+
+function saveStringSet(key: string, set: Set<string>) {
+  let array = Array.from(set)
+  let json = JSON.stringify(array)
+  localStorage.setItem(key, json)
+}
+
+function loadTags(): Set<string> {
+  return loadStringSet(LOCALSTORAGE_TAGS)
+}
+
+function saveTags(tags: Set<string>) {
+  return saveStringSet(LOCALSTORAGE_TAGS, tags)
+}
+
+function loadStrikedItems(): Set<string> {
+  return loadStringSet(LOCALSTORAGE_STRIKED)
+}
+
+function saveStrikedItems(strikedItems: Set<string>) {
+  return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
+}
+
+function loadDays(): number {
+  let defaultDays = 3
+  let json = localStorage.getItem(LOCALSTORAGE_DAYS)
+  if (json === null) {
+    return defaultDays
+  }
+  let days = JSON.parse(json)
+  if (typeof days !== "number") {
+    console.error(`localStorage has invalid '${LOCALSTORAGE_DAYS}' number: '${json}'`)
+    localStorage.removeItem(LOCALSTORAGE_DAYS)
+    return defaultDays
+  }
+  return days
+}
+
+function saveDays(days: number) {
+  let json = JSON.stringify(days)
+  localStorage.setItem(LOCALSTORAGE_DAYS, json)
+}
+
+function loadHeader(): string {
+  let defaultHeader = "Paklijst"
+  let json = localStorage.getItem(LOCALSTORAGE_HEADER)
+  if (json === null) {
+    return defaultHeader
+  }
+  let header = JSON.parse(json)
+  if (typeof header !== "string") {
+    console.error(`localStorage has invalid '${LOCALSTORAGE_HEADER}' string: '${json}'`)
+    localStorage.removeItem(LOCALSTORAGE_HEADER)
+    return header
+  }
+  return header
+}
+
+function saveHeader(header: string) {
+  let json = JSON.stringify(header)
+  localStorage.setItem(LOCALSTORAGE_HEADER, json)
 }
 
 export default App;
