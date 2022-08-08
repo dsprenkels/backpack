@@ -32,13 +32,13 @@ test("tagExpr with ident", () => {
 test("tagExpr with single-ended range", () => {
     expect(filter.tagExpr.parse("==10")).toEqual(daysRange(10, 10))
     expect(filter.tagExpr.parse(">10")).toEqual(daysRange(11))
-    expect(filter.tagExpr.parse("<10")).toEqual(daysRange(undefined, 9))
+    expect(filter.tagExpr.parse("<10")).toEqual(daysRange(undefined, 10))
     expect(filter.tagExpr.parse(">=10")).toEqual(daysRange(10, undefined))
     expect(filter.tagExpr.parse("<=10")).toEqual(daysRange(undefined, 10))
 
     expect(filter.tagExpr.parse("== 10")).toEqual(daysRange(10, 10))
     expect(filter.tagExpr.parse("> 10")).toEqual(daysRange(11))
-    expect(filter.tagExpr.parse("< 10")).toEqual(daysRange(undefined, 9))
+    expect(filter.tagExpr.parse("< 10")).toEqual(daysRange(undefined, 10))
     expect(filter.tagExpr.parse(">= 10")).toEqual(daysRange(10, undefined))
     expect(filter.tagExpr.parse("<= 10")).toEqual(daysRange(undefined, 10))
 })

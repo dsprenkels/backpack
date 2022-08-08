@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import './App.css';
 import DB from './data';
-import { BringList as BL, BringListCategory as BLC, collectTagsFromDB, exprIsMatch, Filter } from './filterspec';
+import { BringList as BL, BringListCategory as BLC, collectTagsFromDB, exprIsMatch, Filter, Item } from './filterspec';
 
 function Header() {
   const [header, setHeader] = useState("Paklijst")
@@ -75,26 +75,37 @@ function BringListCategory(props: { blc: BLC, filter: Filter }) {
         .filter((item) => exprIsMatch(props.filter, item.tags))
         .map((i) => <BringListItem
           key={i.name}
-          item={i.name}
+          item={i}
+          filter={props.filter}
         />)}
     </ul>
   </div>
 }
 
-function BringListItem(props: { item: string }) {
+function BringListItem(props: { item: Item, filter: Filter }) {
   let [isStriked, setIsStriked] = useState(false)
-  let className;
+  let liElem = useRef<HTMLLIElement>(null)
+
+  let itemText = props.item.name
+  let everyNDays = props.item.everyNDays
+  if (everyNDays !== undefined) {
+    let itemAmount = Math.ceil(props.filter.days / everyNDays)
+    itemText = `${itemAmount}x ${props.item.name}`
+  }
+
+  let className= "App-bringListItem"
   if (isStriked) {
     className = "App-bringListItem App-bringListItemStriked"
   }
-  else {
-    className = "App-bringListItem"
-  }
-  return <li className={className}>
+
+  return <li
+  ref={liElem}
+  className={className}
+  >
     <input className="App-bringListItemCheckbox"
       type="checkbox"
       disabled={isStriked}
-    />{props.item}
+    />{itemText}
     <span onClick={() => setIsStriked(!isStriked)}>
       <BootstrapCross className="App-bootstrapCross" height={16} />
     </span>

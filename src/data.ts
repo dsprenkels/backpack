@@ -2,43 +2,67 @@ import { BringList, parseDatabase } from "./filterspec"
 
 const BRINGLIST_DATABASE: BringList = parseDatabase(
 `
-# Kleding []
-topjes [ *2 !warm ]
-topjes [ *1 warm ]
-lange broeken [ *4 !warm ]
-lange broek [ warm ]
+// Kleding tot 10 dagen
+# Kleding [ <10 ]
+
+topje [ *2 !(warm & !lichtgewicht) ]
+topje [ *1 (warm & !lichtgewicht) ]
+lange broek [ *5 !warm ]
+1x lange broek [ warm ]
 rokjes/korte broeken [ *2.5 warm ]
-ondergoed [ *1 ]
-sokken (tenzij slippers) [ *1 ]
+boxer [ *1 ]
+beha [ *7 ]
+sokken [ *1 ]
+trui [ !warm ]
+(regen)jas
+wandelschoenen [ wandelen ]
+zwemkleding [ zwemmen ]
+slippers [ (warm | zwemmen) & !lichtgewicht ]
+pyjama/nachthemd
+(bad)handdoek [ zwemmen | kamperen ]
+zak voor vieze was
+
+// Kleding vanaf 10 dagen
+# Kleding [ >=10 ]
+
+5x topje [ !(warm & !lichtgewicht) ]
+10x topje [ (warm & !lichtgewicht) ]
+2x lange broek [ !warm ]
+1x lange broek [ warm ]
+4x rokjes/korte broeken [ warm ]
+10x boxer
+2x beha
+10x sokken
 trui [ !warm ]
 jas
 wandelschoenen [ wandelen ]
 zwemkleding [ zwemmen ]
-slippers [ warm | zwemmen ]
-pyjama
+slippers [ (warm | zwemmen) & !lichtgewicht ]
+pyjama/nachthemd
 (bad)handdoek [ zwemmen | kamperen ]
 zak voor vieze was
+wasmiddel
 
-# Kampeerspullen [kamperen]
-tent [ kamperen ]
-slaapzak [ kamperen ]
-liner [ kamperen ]
-matje [ kamperen ]
-foldacups [ kamperen ]
-bestek [ kamperen ]
-bestek [ kamperen ]
-kooksetje [ kamperen ]
-bakje [ kamperen ]
-spateltje [ kamperen ]
-olie voor koken [ kamperen ]
-kruiden [ kamperen ]
-campingstoeltje [ (kamperen & fietsen) | (kamperen & auto) ]
+# Kampeerspullen [ kamperen ]
+tent
+slaapzak
+liner
+matje
+foldacups
+mesje
+spork
+kooksetje
+bakje
+spateltje
+olie voor koken
+kruiden
+campingstoeltje [ fietsen | auto ]
 
-# Klimspullen
-klimschoenen [ klimmen ]
-zekermateriaal [ klimmen ]
-pofzak [ klimmen ]
-topo [ klimmen ]
+# Klimspullen [ klimmen ]
+klimschoenen
+zekermateriaal
+pofzak
+topo
 
 # Fietsen
 bandenplakset [ fietsen ]
@@ -80,8 +104,8 @@ herstelbewijs [ buitenland ]
 leesboek/e-reader
 smartphone
 oplader smartphone
-iPad [ !fietsen ]
-oplader iPad [ !fietsen ] 
+iPad [ !lichtgewicht ]
+oplader iPad [ !lichtgewicht ] 
 laptop [ werk ]
 oplader laptop [ werk ]
 powerbank [ werk | >=7 | wandelen | kamperen | fietsen ]
@@ -90,7 +114,8 @@ oplader smartwatch [ >=5 ]
 koptelefoon/oordopjes [ vliegreis | kamperen | werk | fietsen ]
 oordopjes (concert, voor onder koptelefoon) [ vliegreis ]
 spelletjes [ kamperen ]
-pen/papier [ werk ]
+pen/papier [ werk | fietsen | kamperen ]
+vlaggetje voor achter op de fiets [ fietsen & kamperen ]
 
 # Eten/drinken
 eten voor de eerste dag [ kamperen ]

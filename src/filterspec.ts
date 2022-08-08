@@ -24,7 +24,7 @@ const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 function makeRangeSingle(op: string, num: number): DaysRange {
     switch (op) {
         case "==": return { kind: "DaysRange", lo: num, hi: num }
-        case "<": return { kind: "DaysRange", hi: num - 1 }
+        case "<": return { kind: "DaysRange", hi: num }
         case "<=": return { kind: "DaysRange", hi: num }
         case ">": return { kind: "DaysRange", lo: num + 1 }
         case ">=": return { kind: "DaysRange", lo: num }
@@ -179,8 +179,7 @@ export let category: P<FilterLine> =
 
 export let filterLine = new class FilterLineParser extends P<FilterLine> {
     parse(rest: string): parse.PResult<FilterLine> {
-        let start = rest.at(0)
-        if (start === "#") {
+        if (rest.startsWith("#")) {
             return category.parse(rest)
         }
         return item.parse(rest)
@@ -190,7 +189,9 @@ export let filterLine = new class FilterLineParser extends P<FilterLine> {
 export function parseDatabase(input: string): BringList {
     let lines = input.split("\n")
     let enumeratedLines: [number, string][] = lines.map((line, index) => [index, line])
-    let nonEmptyLines = enumeratedLines.filter((idxLine) => idxLine[1].trim() !== "")
+    let nonEmptyLines = enumeratedLines.filter(([idx, line]) => 
+        line.trim() !== "" && !line.trim().startsWith("//")
+    )
     let database: BringList = []
     let currentCategory: BringListCategory | null = null
     for (let [idx, line] of nonEmptyLines) {

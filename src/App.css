@@ -93,10 +93,20 @@
   }
 }
 
+@keyframes highlightBLIChange {
+  from {
+    background-color: #fdffd3;
+  }
+
+  to {
+    background-color: transparent;
+  }
+}
+
 .App-bringListCategory {
   padding-left: 0;
   list-style: none outside;
-  animation: fadein 0.1s linear;
+  animation: highlightBLIChange 1s linear running;
 }
 
 .App-bringListItem {
@@ -135,18 +145,6 @@
 
 .App-bootstrapCrossActive {
   opacity: 1.0;
-}
-
-@keyframes fadein {
-  from {
-    /* height: 0%; */
-    opacity: 0;
-  }
-
-  to {
-    /* height: 100%; */
-    opacity: 1;
-  }
 }
 
 .App-bringListItemCheckbox {
