@@ -41,6 +41,7 @@ slippers [ (warm | zwemmen) & !lichtgewicht ]
 pyjama/nachthemd
 (bad)handdoek [ zwemmen | kamperen ]
 zak voor vieze was
+// Na 10 dagen moeten we maar gewoon kleding gaan wassen
 wasmiddel
 
 # Kampeerspullen [ kamperen ]
@@ -57,6 +58,7 @@ spateltje
 olie voor koken
 kruiden
 campingstoeltje [ fietsen | auto ]
+spelletjes [ !lichtgewicht ]
 
 # Klimspullen [ klimmen ]
 klimschoenen
@@ -80,8 +82,8 @@ estradiol
 paracetamol [ !lichtgewicht ]
 oordopjes (voor slapen)
 haarelastiekjes
-conditioner
-haargel
+conditioner [ !lichtgewicht ]
+haargel [ !lichtgewicht ]
 tissues
 vaseline
 zonnebrandcrèmer [ warm ]
@@ -111,12 +113,11 @@ iPad [ !lichtgewicht ]
 oplader iPad [ !lichtgewicht ] 
 laptop [ werk ]
 oplader laptop [ werk ]
-powerbank [ werk | >=7 | wandelen | kamperen | fietsen ]
-oplader powerbank [ werk | >=7 | wandelen | kamperen | fietsen ]
+powerbank [ werk | >=5 | wandelen | kamperen | fietsen ]
+oplader powerbank [ werk | >=5 | wandelen | kamperen | fietsen ]
 oplader smartwatch [ >=5 ]
 koptelefoon/oordopjes [ vliegreis | kamperen | werk | fietsen ]
 oordopjes (concert, voor onder koptelefoon) [ vliegreis ]
-spelletjes [ kamperen ]
 pen/papier [ werk | fietsen | kamperen ]
 vlaggetje voor achter op de fiets [ fietsen & kamperen ]
 
