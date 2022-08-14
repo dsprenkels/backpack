@@ -125,8 +125,8 @@ vlaggetje voor achter op de fiets [ fietsen & kamperen ]
 eten voor de eerste dag [ kamperen ]
 flesje
 extra flesje voor onderweg [ wandelen | fietsen | klimmen ]
-twennybar [ *1 <=3 | vliegreis | kamperen | fietsen ]
-3x twennybar [ >3 | vliegreis | kamperen | fietsen ]
+twennybar [ *1 <=3 & (vliegreis | kamperen | fietsen) ]
+3x twennybar [ >3 & (vliegreis | kamperen | fietsen) ]
 1x twennybar [ !(vliegreis | kamperen | fietsen) ]
 `.trim())
 
