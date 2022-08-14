@@ -109,10 +109,10 @@ herstelbewijs [ buitenland ]
 leesboek/e-reader
 smartphone
 oplader smartphone
-iPad [ !lichtgewicht ]
-oplader iPad [ !lichtgewicht ] 
-laptop [ werk ]
-oplader laptop [ werk ]
+iPad [ (!lichtgewicht) | ipad ]
+oplader iPad [ (!lichtgewicht) | ipad ]
+laptop [ (!lichtgewicht | werk) | laptop ]
+oplader laptop [ (!lichtgewicht | werk) | laptop ]
 powerbank [ werk | >=5 | wandelen | kamperen | fietsen ]
 oplader powerbank [ werk | >=5 | wandelen | kamperen | fietsen ]
 oplader smartwatch [ >=5 ]
