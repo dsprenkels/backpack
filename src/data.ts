@@ -73,23 +73,25 @@ EHBO-kitje
 pompje
 smeerolie
 
-# Toiletspullen/medisch
+# Toiletspullen
 tandenborstel
 tandpasta
 deodorant
 cetrizine
 estradiol
 paracetamol [ !lichtgewicht ]
-oordopjes (voor slapen)
+ibuprofen [ !lichtgewicht ]
+sieraden
 haarelastiekjes
+oordopjes (voor slapen)
 conditioner [ !lichtgewicht ]
 haargel [ !lichtgewicht ]
 tissues
 vaseline
-zonnebrandcrèmer [ warm ]
+zonnebrandcrème [ warm ]
 zonnebril [ warm ]
-scheermesje [ >=5 ]
-scheerschuim [ >=5 ]
+scheermesje [ >=3 ]
+scheerschuim [ >=3 ]
 sporttape [ wandelen | klimmen ]
 mondmaskers [ buitenland ]
 zelftesten [ !lichtgewicht ]
