@@ -14,6 +14,8 @@ const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
 
 
 function Header() {
+  const inputFieldGrowPadding = 2
+
   const [header, setHeader] = React.useState(loadHeader)
   useEffect(() => saveHeader(header), [header])
 
@@ -21,7 +23,7 @@ function Header() {
     <header className="App-header">
       <input
         className="App-headerInput"
-        size={clamp(20, header.length, 50)}
+        size={clamp(20, header.length + inputFieldGrowPadding, 50)}
         value={header}
         onChange={(event) => setHeader(event.target.value)}
       />
