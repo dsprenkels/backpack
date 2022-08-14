@@ -69,6 +69,7 @@ topo
 # Fietsen [ fietsen ]
 bandenplakset
 inbussleuteltje
+spin
 EHBO-kitje
 pompje
 smeerolie
