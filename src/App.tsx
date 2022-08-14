@@ -21,6 +21,7 @@ function Header() {
     <header className="App-header">
       <input
         className="App-headerInput"
+        size={clamp(20, header.length, 50)}
         value={header}
         onChange={(event) => setHeader(event.target.value)}
       />
@@ -265,6 +266,10 @@ function App() {
       ></BringList>
     </div>
   );
+}
+
+function clamp(lo: number, x: number, hi: number): number {
+  return Math.max(Math.min(x, hi), lo)
 }
 
 function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
