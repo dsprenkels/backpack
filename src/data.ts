@@ -90,6 +90,7 @@ tissues
 vaseline
 zonnebrandcrème [ warm ]
 zonnebril [ warm ]
+muggenspul [ warm ]
 nagelvijl [ >=3 ]
 scheermesje [ >=3 ]
 scheerschuim [ >=3 ]
