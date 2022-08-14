@@ -90,10 +90,11 @@ tissues
 vaseline
 zonnebrandcrème [ warm ]
 zonnebril [ warm ]
+nagelvijl [ >=3 ]
 scheermesje [ >=3 ]
 scheerschuim [ >=3 ]
 sporttape [ wandelen | klimmen ]
-mondmaskers [ buitenland ]
+mondmaskers [ !lichtgewicht | buitenland ]
 zelftesten [ !lichtgewicht ]
 
 # Administratie
