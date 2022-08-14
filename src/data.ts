@@ -128,6 +128,7 @@ vlaggetje voor achter op de fiets [ fietsen & kamperen ]
 
 # Eten/drinken
 eten voor de eerste dag [ kamperen ]
+snack voor tijdens inspanning [ fietsen | wandelen ]
 flesje
 extra flesje voor onderweg [ wandelen | fietsen | klimmen ]
 twennybar [ *1 <=3 & (vliegreis | kamperen | fietsen) ]
