@@ -1,9 +1,6 @@
-import { PResultErr, PResultOk } from './parse'
+import { PResultOk } from './parse'
 import * as filter from './filterspec'
-import PAKLIJST_DATABASE from './data'
-import BRINGLIST_DATABASE from './data'
 
-const OK = { ok: true }
 const ERR = { ok: false }
 
 function ok<T>(value: T): PResultOk<T> {
@@ -99,32 +96,4 @@ test("complex items", () => {
     expect(filter.item.parse("rokjes/korte broeken [*2.5 zwemmen | warm & 0-10]")).toEqual(expected)
     expect(filter.item.parse("rokjes/korte broeken[ *2.5 zwemmen | warm & 0-10]")).toEqual(expected)
 
-})
-
-
-test("debug", () => {
-    let match
-
-    match = {
-        ok: true,
-        value: { kind: 'Item', name: 'topjes', everyNDays: undefined, tags: {} },
-        rest: ''
-    }
-    expect(filter.item.parse("topjes")).toMatchObject(match)
-    expect(filter.item.parse("topjes[]")).toMatchObject(match)
-    expect(filter.item.parse("topjes []")).toMatchObject(match)
-    expect(filter.item.parse("topjes[  ]")).toMatchObject(match)
-    expect(filter.item.parse("topjes [  ]")).toMatchObject(match)
-
-    match = {
-        ok: true,
-        value: { kind: 'Item', name: 'topjes', everyNDays: 2, tags: {} },
-        rest: ''
-    }
-    expect(filter.item.parse("topjes[ *2 ]")).toMatchObject(match)
-    expect(filter.item.parse("topjes [ *2 ]",)).toMatchObject(match)
-    expect(filter.item.parse("topjes[ *2 warm ]",)).toMatchObject(match)
-    expect(filter.item.parse("topjes [ *2 warm ]",)).toMatchObject(match)
-    expect(filter.item.parse("topjes[ *2 !warm ]",)).toMatchObject(match)
-    expect(filter.item.parse("topjes [ *2 !warm ]",)).toMatchObject(match)
 })
