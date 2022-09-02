@@ -1,34 +1,34 @@
 import { P } from "./parse"
 import * as parse from "./parse"
 
-export type Filter = { tags: Set<string>, days: number }
+export type Filter = { tags: Set<string>, nights: number }
 export type ExprIsMatchResult = { isMatch: boolean, isTrue: string[], isFalse: string[] }
 
 export type BringList = BringListCategory[]
 export interface BringListCategory { category: string, tags: TagExpr, items: Item[] }
 type FilterLine = Category | Item
 export interface Category { kind: "Category", name: string, tags: TagExpr }
-export interface Item { kind: "Item", name: ItemDesc, everyNDays?: EveryNDays, tags: TagExpr }
+export interface Item { kind: "Item", name: ItemDesc, everyNNights?: EveryNNights, tags: TagExpr }
 export type ItemDesc = string
-export type EveryNDays = number // TODO: implement rounding mode
+export type EveryNNights = number // TODO: implement rounding mode
 export type RoundingMode = "floor" | "ceil"
-export type TagExpr = BinOpExpr | NotExpr | TagIdent | DaysRange | Empty
+export type TagExpr = BinOpExpr | NotExpr | TagIdent | NightsRange | Empty
 export interface BinOpExpr { kind: "BinOpExpr", left: TagExpr, op: BinOp, right: TagExpr }
 export type BinOp = "&" | "|" | "^"
 export interface NotExpr { kind: "NotExpr", inner: TagExpr }
 export interface TagIdent { kind: "TagIdent", ident: string }
 export interface Empty { kind: "Empty" }
-export interface DaysRange { kind: "DaysRange", lo?: number, hi?: number }
+export interface NightsRange { kind: "NightsRange", lo?: number, hi?: number }
 
 const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 
-function makeRangeSingle(op: string, num: number): DaysRange {
+function makeRangeSingle(op: string, num: number): NightsRange {
     switch (op) {
-        case "==": return { kind: "DaysRange", lo: num, hi: num }
-        case "<": return { kind: "DaysRange", hi: num }
-        case "<=": return { kind: "DaysRange", hi: num }
-        case ">": return { kind: "DaysRange", lo: num + 1 }
-        case ">=": return { kind: "DaysRange", lo: num }
+        case "==": return { kind: "NightsRange", lo: num, hi: num }
+        case "<": return { kind: "NightsRange", hi: num }
+        case "<=": return { kind: "NightsRange", hi: num }
+        case ">": return { kind: "NightsRange", lo: num + 1 }
+        case ">=": return { kind: "NightsRange", lo: num }
         default: throw Error("unreachable")
     }
 }
@@ -43,27 +43,27 @@ function makeBinOpTree(left: TagExpr, binops: [BinOp, TagExpr][]): TagExpr {
     return tree
 }
 
-export let daysRangeSingleOp: P<string> =
+export let nightsRangeSingleOp: P<string> =
     new parse.Regex((/^(==|<=?|>=?)/))
         .tag(["==", "<", "<=", ">", ">="])
 
-export let daysRangeSingle: P<DaysRange> =
-    daysRangeSingleOp
+export let nightsRangeSingle: P<NightsRange> =
+    nightsRangeSingleOp
         .space()
         .andMap(makeRangeSingle, parse.int.space())
 
-export let daysRangeDoubleOp: P<string> = new parse.Symbol("-")
-export let daysRangeDouble: P<DaysRange> =
+export let nightsRangeDoubleOp: P<string> = new parse.Symbol("-")
+export let nightsRangeDouble: P<NightsRange> =
     parse.int
         .space()
         .andMap(
-            (lo: number, hi: number) => ({ kind: "DaysRange", lo, hi }),
-            daysRangeDoubleOp.space().andMap(
+            (lo: number, hi: number) => ({ kind: "NightsRange", lo, hi }),
+            nightsRangeDoubleOp.space().andMap(
                 (_: string, hi: number) => hi,
                 parse.int.space()
             )
         )
-export let daysRange: P<DaysRange> = daysRangeSingle.or(daysRangeDouble)
+export let nightsRange: P<NightsRange> = nightsRangeSingle.or(nightsRangeDouble)
 
 export let ident: P<string> =
     new parse.Regex(/^[A-Za-z_][A-Za-z0-9_-]*/).tag(["identifier"])
@@ -110,14 +110,14 @@ export let parenExpr: P<TagExpr> =
         .parens(new parse.Symbol("(").space(), new parse.Symbol(")").space())
 
 export function otherTagExprParse(rest: string): parse.PResult<TagExpr> {
-    return parenExpr.or(notExpr, daysRange, tagIdent).parse(rest)
+    return parenExpr.or(notExpr, nightsRange, tagIdent).parse(rest)
 }
 
 export function tagExprParse(rest: string): parse.PResult<TagExpr> {
     return binOpExprOrOther.or(otherTagExpr).parse(rest)
 }
 
-export let everyNDays: P<EveryNDays> =
+export let everyNNights: P<EveryNNights> =
     new parse.Symbol("*").andMap((_: string, x: number) => x, parse.float)
 
 export let textDesc = new class TextDesc extends P<string> {
@@ -148,9 +148,9 @@ export let item: P<FilterLine> =
     textDesc
         .space()
         .andMap(
-            (name: ItemDesc, ENDTE: [EveryNDays | undefined, TagExpr]) =>
-                ({ kind: "Item", name, everyNDays: ENDTE[0], tags: ENDTE[1] }),
-            everyNDays
+            (name: ItemDesc, ENDTE: [EveryNNights | undefined, TagExpr]) =>
+                ({ kind: "Item", name, everyNNights: ENDTE[0], tags: ENDTE[1] }),
+            everyNNights
                 .space()
                 .optional(undefined)
                 .and(tagExpr.space().optional(EMPTY_TAG_EXPR))
@@ -259,11 +259,11 @@ export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
                 }
             }
             return noMatch
-        case "DaysRange":
-            if (expr.lo !== undefined && filter.days < expr.lo) {
+        case "NightsRange":
+            if (expr.lo !== undefined && filter.nights < expr.lo) {
                 return noMatch
             }
-            if (expr.hi !== undefined && filter.days >= expr.hi) {
+            if (expr.hi !== undefined && filter.nights >= expr.hi) {
                 return noMatch
             }
             return { isMatch: true, isTrue: [], isFalse: [] }
@@ -299,7 +299,7 @@ export function collectTagsFromExpr(expr: TagExpr): Set<string> {
             return collectTagsFromExpr(expr.inner)
         case "TagIdent":
             return new Set([expr.ident])
-        case "DaysRange":
+        case "NightsRange":
         case "Empty":
             return new Set()
 

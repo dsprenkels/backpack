@@ -41,11 +41,11 @@
   margin-bottom: 0;
 }
 
-.App-tagListHeader, .App-daysHeader, .App-tagList, .App-daysInput {
+.App-tagListHeader, .App-nightsHeader, .App-tagList, .App-nightsInput {
   display: inline-flex;
 }
 
-.App-daysInput {
+.App-nightsInput {
   margin-left: 1em;
   max-width: 10ex;
 }

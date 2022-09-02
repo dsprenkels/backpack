@@ -7,8 +7,8 @@ function ok<T>(value: T): PResultOk<T> {
     return { ok: true, rest: "", value }
 }
 
-function daysRange(lo?: number, hi?: number): PResultOk<filter.DaysRange> {
-    return ok({ kind: "DaysRange", lo, hi })
+function nightsRange(lo?: number, hi?: number): PResultOk<filter.NightsRange> {
+    return ok({ kind: "NightsRange", lo, hi })
 }
 function tagIdent(ident: string): PResultOk<filter.TagIdent> {
     return ok({ kind: "TagIdent", ident })
@@ -27,24 +27,24 @@ test("tagExpr with ident", () => {
 })
 
 test("tagExpr with single-ended range", () => {
-    expect(filter.tagExpr.parse("==10")).toEqual(daysRange(10, 10))
-    expect(filter.tagExpr.parse(">10")).toEqual(daysRange(11))
-    expect(filter.tagExpr.parse("<10")).toEqual(daysRange(undefined, 10))
-    expect(filter.tagExpr.parse(">=10")).toEqual(daysRange(10, undefined))
-    expect(filter.tagExpr.parse("<=10")).toEqual(daysRange(undefined, 10))
+    expect(filter.tagExpr.parse("==10")).toEqual(nightsRange(10, 10))
+    expect(filter.tagExpr.parse(">10")).toEqual(nightsRange(11))
+    expect(filter.tagExpr.parse("<10")).toEqual(nightsRange(undefined, 10))
+    expect(filter.tagExpr.parse(">=10")).toEqual(nightsRange(10, undefined))
+    expect(filter.tagExpr.parse("<=10")).toEqual(nightsRange(undefined, 10))
 
-    expect(filter.tagExpr.parse("== 10")).toEqual(daysRange(10, 10))
-    expect(filter.tagExpr.parse("> 10")).toEqual(daysRange(11))
-    expect(filter.tagExpr.parse("< 10")).toEqual(daysRange(undefined, 10))
-    expect(filter.tagExpr.parse(">= 10")).toEqual(daysRange(10, undefined))
-    expect(filter.tagExpr.parse("<= 10")).toEqual(daysRange(undefined, 10))
+    expect(filter.tagExpr.parse("== 10")).toEqual(nightsRange(10, 10))
+    expect(filter.tagExpr.parse("> 10")).toEqual(nightsRange(11))
+    expect(filter.tagExpr.parse("< 10")).toEqual(nightsRange(undefined, 10))
+    expect(filter.tagExpr.parse(">= 10")).toEqual(nightsRange(10, undefined))
+    expect(filter.tagExpr.parse("<= 10")).toEqual(nightsRange(undefined, 10))
 })
 
 test("tagExpr with double-ended range", () => {
-    expect(filter.tagExpr.parse("0-10")).toEqual(daysRange(0, 10))
-    expect(filter.tagExpr.parse("10-10")).toEqual(daysRange(10, 10))
-    expect(filter.tagExpr.parse("0 - 10")).toEqual(daysRange(0, 10))
-    expect(filter.tagExpr.parse("10 - 10")).toEqual(daysRange(10, 10))
+    expect(filter.tagExpr.parse("0-10")).toEqual(nightsRange(0, 10))
+    expect(filter.tagExpr.parse("10-10")).toEqual(nightsRange(10, 10))
+    expect(filter.tagExpr.parse("0 - 10")).toEqual(nightsRange(0, 10))
+    expect(filter.tagExpr.parse("10 - 10")).toEqual(nightsRange(10, 10))
 
     expect(filter.tagExpr.parse("-10")).toMatchObject(ERR)
     expect(filter.tagExpr.parse("+10")).toMatchObject(ERR)
@@ -55,7 +55,7 @@ test("complex items", () => {
     let expected = ok({
         "kind": "Item",
         "name": "rokjes/korte broeken",
-        "everyNDays": 2,
+        "everyNNights": 2,
         "tags": {
             "kind": "BinOpExpr",
             "left": {
@@ -72,7 +72,7 @@ test("complex items", () => {
             },
             "op": "&",
             "right": {
-                "kind": "DaysRange",
+                "kind": "NightsRange",
                 "lo": 0,
                 "hi": 10
             }
@@ -87,7 +87,7 @@ test("complex items", () => {
     expect(filter.item.parse("rokjes/korte broeken [*2 zwemmen | warm & 0-10]")).toEqual(expected)
     expect(filter.item.parse("rokjes/korte broeken[ *2 zwemmen | warm & 0-10]")).toEqual(expected)
 
-    expected.value.everyNDays = 2.5
+    expected.value.everyNNights = 2.5
     expect(filter.item.parse("rokjes/korte broeken[*2.5(zwemmen|warm)&0-10]")).toEqual(expected)
     expect(filter.item.parse("rokjes/korte broeken [*2.5 (zwemmen | warm) & 0-10]")).toEqual(expected)
     expect(filter.item.parse("rokjes/korte broeken[ *2.5 (zwemmen | warm) & 0-10]")).toEqual(expected)

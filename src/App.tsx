@@ -9,7 +9,7 @@ const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
 const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
 const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
 const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
-const LOCALSTORAGE_DAYS = `${LOCALSTORAGE_PREFIX}days`
+const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
 const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
 
 
@@ -147,9 +147,9 @@ function BringListItem(props: {
   setIsStriked: (isStriked: boolean) => void,
 }) {
   let itemText = props.item.name
-  let everyNDays = props.item.everyNDays
-  if (everyNDays !== undefined) {
-    let itemAmount = Math.ceil(props.filter.days / everyNDays)
+  let everyNNights = props.item.everyNNights
+  if (everyNNights !== undefined) {
+    let itemAmount = Math.ceil(props.filter.nights / everyNNights)
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
@@ -219,8 +219,8 @@ function App() {
   const [tags, setTags] = React.useState(loadTags)
   useEffect(() => saveTags(tags), [tags])
 
-  const [days, setDays] = React.useState(loadDays)
-  useEffect(() => saveDays(days), [days])
+  const [nights, setNights] = React.useState(loadNights)
+  useEffect(() => saveNights(nights), [nights])
 
   const [checkedItems, setCheckedItems] = React.useState(loadCheckedItems)
   useEffect(() => saveCheckedItems(checkedItems), [checkedItems])
@@ -229,7 +229,7 @@ function App() {
   useEffect(() => saveStrikedItems(strikedItems), [strikedItems])
 
   let tagList = Array.from(filterspec.collectTagsFromDB(DB))
-  let filter = { tags, days }
+  let filter = { tags, nights }
 
   let noneSelectedElement = tags.size === 0 ?
     <div className="App-tagListNoneSelected">no tags selected</div> : <></>
@@ -249,13 +249,13 @@ function App() {
           }
         />
       </div>
-      <div className="App-daysContainer">
-        <h3 className="App-daysHeader">Dagen:</h3>
-        <input className="App-daysInput"
+      <div className="App-nightsContainer">
+        <h3 className="App-nightsHeader">Nachten:</h3>
+        <input className="App-nightsInput"
           type="number"
           min="1"
-          value={days}
-          onChange={(e) => setDays(e.target.valueAsNumber)}
+          value={nights}
+          onChange={(e) => setNights(e.target.valueAsNumber)}
         />
       </div>
       <BringList
@@ -333,24 +333,24 @@ function saveStrikedItems(strikedItems: Set<string>) {
   return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
 }
 
-function loadDays(): number {
-  let defaultDays = 3
-  let json = localStorage.getItem(LOCALSTORAGE_DAYS)
+function loadNights(): number {
+  let defaultNights = 3
+  let json = localStorage.getItem(LOCALSTORAGE_NIGHTS)
   if (json === null) {
-    return defaultDays
+    return defaultNights
   }
-  let days = JSON.parse(json)
-  if (typeof days !== "number") {
-    console.error(`localStorage has invalid '${LOCALSTORAGE_DAYS}' number: '${json}'`)
-    localStorage.removeItem(LOCALSTORAGE_DAYS)
-    return defaultDays
+  let nights = JSON.parse(json)
+  if (typeof nights !== "number") {
+    console.error(`localStorage has invalid '${LOCALSTORAGE_NIGHTS}' number: '${json}'`)
+    localStorage.removeItem(LOCALSTORAGE_NIGHTS)
+    return defaultNights
   }
-  return days
+  return nights
 }
 
-function saveDays(days: number) {
-  let json = JSON.stringify(days)
-  localStorage.setItem(LOCALSTORAGE_DAYS, json)
+function saveNights(nights: number) {
+  let json = JSON.stringify(nights)
+  localStorage.setItem(LOCALSTORAGE_NIGHTS, json)
 }
 
 function loadHeader(): string {
