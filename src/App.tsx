@@ -153,14 +153,18 @@ function BringListItem(props: {
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
-  return <li className="App-bringListItem" >
+  let liClassName = "App-bringListItem"
+  if (props.isStriked) {
+    liClassName = `${liClassName} App-bringListItemStriked`
+  }
+  return <li className={liClassName}>
     <input className="App-bringListItemCheckbox"
       type="checkbox"
       onChange={(event) => props.setIsChecked(event.target.checked)}
       checked={props.isChecked}
       disabled={props.isStriked}
     />
-    <span className={props.isStriked ? "App-bringListItemStriked" : ""}>
+    <span>
       {itemText}
     </span>
 
