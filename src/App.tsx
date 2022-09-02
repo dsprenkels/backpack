@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './App.css';
 import DB from './data';
 import * as filterspec from './filterspec';
@@ -13,19 +13,19 @@ const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
 const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
 
 
-function Header() {
+function Header(props: {
+  header: string,
+  setHeader: (header: string) => void,
+}) {
   const inputFieldGrowPadding = 2
-
-  const [header, setHeader] = React.useState(loadHeader)
-  useEffect(() => saveHeader(header), [header])
 
   return (
     <header className="App-header">
       <input
         className="App-headerInput"
-        size={clamp(20, header.length + inputFieldGrowPadding, 50)}
-        value={header}
-        onChange={(event) => setHeader(event.target.value)}
+        size={clamp(20, props.header.length + inputFieldGrowPadding, 50)}
+        value={props.header}
+        onChange={(event) => props.setHeader(event.target.value)}
       />
     </header>
   )
@@ -215,49 +215,112 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
   </svg>
 }
 
+function Settings(props: {
+  tags: Set<string>,
+  setTags: (tags: Set<string>) => void,
+  nights: number,
+  setNights: (nights: number) => void,
+  doResetAll: () => void,
+}) {
+  const [resetConfirming, setResetConfirming] = useState(false)
+  const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
+  const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(DB)), [DB])
+
+  let noneSelectedElement = props.tags.size === 0 ?
+    <div className="App-tagListNoneSelected">no tags selected</div> : <></>
+
+  let resetButton;
+  if (resetConfirming) {
+    resetButton = <input
+      className="App-resetButton App-resetButtonConfirming"
+      type="button"
+      value="click again to confirm"
+      onClick={() => {
+        if (confirmResetTimeout !== null) clearTimeout(confirmResetTimeout)
+        props.doResetAll()
+        setResetConfirming(false)
+      }}
+    />
+  } else {
+    resetButton = <input
+      className="App-resetButton"
+      type="button"
+      value="reset everything"
+      onClick={() => {
+        setResetConfirming(true)
+        let timeout = setTimeout(() => setResetConfirming(false), 10 * 1000)
+        setConfirmResetTimout(timeout)
+      }}
+    />
+  }
+
+  return <div className="App-settingsContainer">
+    <div className="App-tagListContainer App-smallVerticalMargin">
+      <h3 className="App-tagListHeader App-noVerticalMargin">Tags:</h3>
+      {noneSelectedElement}
+      <TagList
+        allTags={tagList}
+        selectedTags={props.tags}
+        onSelectTag={(tag: string, enabled: boolean) =>
+          props.setTags(setAssign(props.tags, tag, enabled))}
+      />
+    </div>
+    <div className="App-nightsContainer App-smallVerticalMargin">
+      <h3 className="App-nightsHeader App-noVerticalMargin">Nachten:</h3>
+      <input className="App-nightsInput"
+        type="number"
+        min="1"
+        value={props.nights}
+        onChange={(e) => props.setNights(e.target.valueAsNumber)}
+      />
+    </div>
+    <div className="App-resetButtonContainer App-smallVerticalMargin">
+      <h3 className="App-resetButtonHeader App-noVerticalMargin">Reset:</h3>
+      <> </>
+      {resetButton}
+    </div>
+  </div>
+}
+
 function App() {
-  const [tags, setTags] = React.useState(loadTags)
+  const [header, setHeader] = useState(loadHeader)
+  useEffect(() => saveHeader(header), [header])
+
+  const [tags, setTags] = useState(loadTags)
   useEffect(() => saveTags(tags), [tags])
 
-  const [nights, setNights] = React.useState(loadNights)
+  const [nights, setNights] = useState(loadNights)
   useEffect(() => saveNights(nights), [nights])
 
-  const [checkedItems, setCheckedItems] = React.useState(loadCheckedItems)
+  const [checkedItems, setCheckedItems] = useState(loadCheckedItems)
   useEffect(() => saveCheckedItems(checkedItems), [checkedItems])
 
-  const [strikedItems, setStrikedItems] = React.useState(loadStrikedItems)
+  const [strikedItems, setStrikedItems] = useState(loadStrikedItems)
   useEffect(() => saveStrikedItems(strikedItems), [strikedItems])
 
-  let tagList = Array.from(filterspec.collectTagsFromDB(DB))
-  let filter = { tags, nights }
+  let doResetAll = () => {
+    clearAllLocalStorage()
+    setHeader(loadHeader)
+    setTags(loadTags)
+    setNights(loadNights)
+    setCheckedItems(loadCheckedItems)
+    setStrikedItems(loadStrikedItems)
+  }
 
-  let noneSelectedElement = tags.size === 0 ?
-    <div className="App-tagListNoneSelected">no tags selected</div> : <></>
+  let filter = { tags, nights }
   return (
     <div className="App">
-      <Header />
-      <div className="App-tagListContainer">
-        <h3 className="App-tagListHeader">Tags:</h3>
-        {noneSelectedElement}
-        <TagList
-          allTags={tagList}
-          selectedTags={tags}
-          onSelectTag={(tag: string, enabled: boolean) =>
-            setTags((_tags) =>
-              setAssign(_tags, tag, enabled)
-            )
-          }
-        />
-      </div>
-      <div className="App-nightsContainer">
-        <h3 className="App-nightsHeader">Nachten:</h3>
-        <input className="App-nightsInput"
-          type="number"
-          min="1"
-          value={nights}
-          onChange={(e) => setNights(e.target.valueAsNumber)}
-        />
-      </div>
+      <Header
+        header={header}
+        setHeader={setHeader}
+      />
+      <Settings
+        tags={tags}
+        setTags={setTags}
+        nights={nights}
+        setNights={setNights}
+        doResetAll={doResetAll}
+      />
       <BringList
         bringList={DB}
         filter={filter}
@@ -269,7 +332,7 @@ function App() {
         updateStrikedItems={(name: string, isStriked: boolean) => {
           setStrikedItems(setAssign(strikedItems, name, isStriked))
         }}
-      ></BringList>
+      />
     </div>
   );
 }
@@ -371,6 +434,19 @@ function loadHeader(): string {
 function saveHeader(header: string) {
   let json = JSON.stringify(header)
   localStorage.setItem(LOCALSTORAGE_HEADER, json)
+}
+
+function clearAllLocalStorage() {
+  let keys = [
+    LOCALSTORAGE_TAGS,
+    LOCALSTORAGE_CHECKED,
+    LOCALSTORAGE_STRIKED,
+    LOCALSTORAGE_NIGHTS,
+    LOCALSTORAGE_HEADER,
+  ]
+  for (let key of keys) {
+    localStorage.removeItem(key)
+  }
 }
 
 export default App;

@@ -27,22 +27,41 @@
   color: #61dafb;
 }
 
-.App-tagListContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  /* Erase the margin on the children and put the margin on the container */
-  margin-top: 1em;
-  margin-bottom: 1em;
-}
-
-.App-tagListContainer > * {
+.App-noVerticalMargin {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.App-tagListHeader, .App-nightsHeader, .App-tagList, .App-nightsInput {
+.App-smallVerticalMargin {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.App-settingsContainer {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.App-tagListContainer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  /* Erase the margin on the children and put the margin on the container */
+}
+
+.App-tagListHeader,
+.App-nightsHeader,
+.App-tagList,
+.App-nightsInput,
+.App-resetButtonHeader,
+.App-resetButton {
   display: inline-flex;
+}
+
+.App-resetButtonConfirming {
+  font-weight: bold;
+  color: red;
 }
 
 .App-nightsInput {
@@ -58,6 +77,7 @@
   /* Undo list padding */
   padding-left: 0;
   flex-wrap: wrap;
+  margin: 0;
 }
 
 .App-tag {
@@ -93,6 +113,12 @@
 
   .App-tag.App-tag-selected {
     display: inline-flex;
+  }
+}
+
+@media print {
+  .App-resetButtonContainer {
+    display: none;
   }
 }
 
@@ -138,6 +164,7 @@
 .App-BringListExplainTrue {
   color: darkgreen;
 }
+
 .App-BringListExplainFalse {
   color: darkred;
 }
