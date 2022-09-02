@@ -5,7 +5,7 @@ import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 
 
-const LOCALSTORAGE_PREFIX = "nl.ds7s.paklijst."
+const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
 const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
 const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
 const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
@@ -350,7 +350,7 @@ function saveDays(days: number) {
 }
 
 function loadHeader(): string {
-  let defaultHeader = "Paklijst"
+  let defaultHeader = "backpack"
   let json = localStorage.getItem(LOCALSTORAGE_HEADER)
   if (json === null) {
     return defaultHeader
