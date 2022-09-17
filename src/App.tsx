@@ -224,7 +224,7 @@ function Settings(props: {
 }) {
   const [resetConfirming, setResetConfirming] = useState(false)
   const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
-  const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(DB)), [DB])
+  const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(DB)), [])
 
   let noneSelectedElement = props.tags.size === 0 ?
     <div className="App-tagListNoneSelected">no tags selected</div> : <></>
