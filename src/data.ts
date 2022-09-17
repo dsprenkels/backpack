@@ -49,6 +49,8 @@ tent
 slaapzak
 liner
 matje
+kussentje
+hoofdlampje
 foldacups
 mesje
 spork
