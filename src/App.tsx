@@ -176,7 +176,7 @@ function BringListItem(props: {
 }
 
 function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
-  let explainList = []
+  let explainList: JSX.Element[] = []
   for (let tag of props.isTrue) {
     explainList.push(
       <span key={tag} className="App-BringListExplainTrue">{tag}</span>
@@ -189,7 +189,7 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
   }
 
   // Intersperse commas
-  let explainJSX = []
+  let explainJSX: (JSX.Element | string)[] = []
   for (let idx = 0; idx < explainList.length; idx++) {
     explainJSX.push(explainList[idx])
     let isLast = idx === explainList.length - 1

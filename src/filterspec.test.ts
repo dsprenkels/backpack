@@ -1,3 +1,4 @@
+import { assert, expect, test } from 'vitest'
 import { PResultOk } from './parse'
 import * as filter from './filterspec'
 
