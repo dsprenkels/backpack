@@ -10,7 +10,7 @@ type FilterLine = Category | Item
 export interface Category { kind: "Category", name: string, tags: TagExpr }
 export interface Item { kind: "Item", name: ItemDesc, everyNNights?: EveryNNights, tags: TagExpr }
 export type ItemDesc = string
-export type EveryNNights = number // TODO: implement rounding mode
+export type EveryNNights = number
 export type RoundingMode = "floor" | "ceil"
 export type TagExpr = BinOpExpr | NotExpr | TagIdent | NightsRange | Empty
 export interface BinOpExpr { kind: "BinOpExpr", left: TagExpr, op: BinOp, right: TagExpr }

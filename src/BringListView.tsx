@@ -223,6 +223,7 @@ function Settings(props: {
   doResetAll: () => void,
 }) {
   const [resetConfirming, setResetConfirming] = useState(false)
+  const [resetDebouncing, setResetDebouncing] = useState(false)
   const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
   const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(DB)), [])
 
@@ -240,6 +241,7 @@ function Settings(props: {
         props.doResetAll()
         setResetConfirming(false)
       }}
+      disabled={resetDebouncing}
     />
   } else {
     resetButton = <input
@@ -250,6 +252,9 @@ function Settings(props: {
         setResetConfirming(true)
         let timeout = setTimeout(() => setResetConfirming(false), 10 * 1000)
         setConfirmResetTimout(timeout)
+
+        setResetDebouncing(true)
+        setTimeout(() => setResetDebouncing(false), 500)
       }}
     />
   }
