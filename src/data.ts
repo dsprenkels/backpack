@@ -126,7 +126,7 @@ oplader smartwatch [ >=5 ]
 knuffel [ !lichtgewicht & !werk ]
 koptelefoon/oordopjes [ vliegreis | kamperen | werk | fietsen ]
 oordopjes (concert, voor onder koptelefoon) [ vliegreis ]
-pen/papier [ werk | fietsen | kamperen ]
+pen/papier [ fietsen | kamperen ]
 vlaggetje voor achter op de fiets [ fietsen & kamperen ]
 
 # Eten/drinken
