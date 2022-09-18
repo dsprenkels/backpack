@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import './App.css';
+import './BringListView.css';
 import DB from './data';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
@@ -282,7 +282,7 @@ function Settings(props: {
   </div>
 }
 
-function App() {
+function BringListView() {
   const [header, setHeader] = useState(loadHeader)
   useEffect(() => saveHeader(header), [header])
 
@@ -449,4 +449,4 @@ function clearAllLocalStorage() {
   }
 }
 
-export default App;
+export default BringListView;

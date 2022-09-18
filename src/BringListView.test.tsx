@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import App from './App';
+import BringListView from './BringListView';
 import { assert, expect, test } from 'vitest'
 
 test('renders learn react link', () => {
