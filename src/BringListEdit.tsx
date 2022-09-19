@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
-import * as store from "./store"
 import "./BringListEdit.css"
 import { BringList, parseDatabaseChecked } from "./filterspec"
+import { Header, Nav } from "./Layout"
+import * as store from "./store"
 
 function CompileStatus(props: { compileResult: BringList | Error }) {
     if (props.compileResult instanceof Error) {
@@ -17,6 +18,9 @@ function CompileStatus(props: { compileResult: BringList | Error }) {
 
 
 function BringListEdit() {
+    const [header, setHeader] = useState(store.loadHeader)
+    useEffect(() => store.saveHeader(header), [header])
+
     let [bringListTemplate, setBringListTemplate] = useState(store.loadTemplateOrDefault)
     let parsedDatabase = parseDatabaseChecked(bringListTemplate)
     useEffect(() => {
@@ -24,14 +28,19 @@ function BringListEdit() {
         store.saveTemplate(bringListTemplate)
     }, [parsedDatabase])
 
-    return <>
+    return <div className="BringListEdit">
+        <Header
+            header={header}
+            setHeader={setHeader}
+        />
+        <Nav />
         <CompileStatus compileResult={parsedDatabase} />
         <textarea
             className="BringListEdit-textarea"
             onChange={(event => setBringListTemplate(event.target.value))}
             value={bringListTemplate}
         />
-    </>
+    </div>
 }
 
 export default BringListEdit

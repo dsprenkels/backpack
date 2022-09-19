@@ -2,27 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import './BringListView.css';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
+import { Header, Nav } from './Layout';
 import * as store from './store';
-import DEFAULT_BRINGLIST_TEMPLATE from './template';
 
-
-function Header(props: {
-  header: string,
-  setHeader: (header: string) => void,
-}) {
-  const inputFieldGrowPadding = 2
-
-  return (
-    <header className="BringListView-header">
-      <input
-        className="BringListView-headerInput"
-        size={clamp(20, props.header.length + inputFieldGrowPadding, 50)}
-        value={props.header}
-        onChange={(event) => props.setHeader(event.target.value)}
-      />
-    </header>
-  )
-}
 
 function TagList(
   props: {
@@ -315,6 +297,7 @@ function BringListView() {
         header={header}
         setHeader={setHeader}
       />
+      <Nav />
       <Settings
         bringList={bringList}
         tags={tags}
@@ -337,10 +320,6 @@ function BringListView() {
       />
     </div>
   );
-}
-
-function clamp(lo: number, x: number, hi: number): number {
-  return Math.max(Math.min(x, hi), lo)
 }
 
 function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {

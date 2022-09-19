@@ -10,6 +10,7 @@ import './index.css';
 
 const routes = [
   { path: '/', element: <BringListView /> },
+  { path: '/view', element: <BringListView /> },
   { path: '/edit', element: <BringListEdit /> },
 ]
 
