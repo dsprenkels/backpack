@@ -1,13 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import BringListView from './BringListView';
-import BringListEdit from './BringListEdit';
 import {
   createBrowserRouter,
-  RouterProvider,
-  Route,
+  RouterProvider
 } from "react-router-dom";
+import BringListEdit from './BringListEdit';
+import BringListView from './BringListView';
+import './index.css';
 
 const routes = [
   { path: '/', element: <BringListView /> },

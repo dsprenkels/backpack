@@ -1,16 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './BringListView.css';
-import DB from './data';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
-
-
-const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
-const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
-const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
-const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
-const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
-const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
+import * as store from './store';
+import DEFAULT_BRINGLIST_TEMPLATE from './template';
 
 
 function Header(props: {
@@ -20,9 +13,9 @@ function Header(props: {
   const inputFieldGrowPadding = 2
 
   return (
-    <header className="App-header">
+    <header className="BringListView-header">
       <input
-        className="App-headerInput"
+        className="BringListView-headerInput"
         size={clamp(20, props.header.length + inputFieldGrowPadding, 50)}
         value={props.header}
         onChange={(event) => props.setHeader(event.target.value)}
@@ -44,7 +37,7 @@ function TagList(
       selected={props.selectedTags.has(tagName)}
       onSelectTag={props.onSelectTag} />
   )
-  return <ul className="App-tagList">
+  return <ul className="BringListView-tagList">
     {tagElems}
   </ul>
 }
@@ -54,12 +47,12 @@ function Tag(props: {
   selected: boolean,
   onSelectTag: (tag: string, enabled: boolean) => void,
 }) {
-  let className = "App-tag"
+  let classNames = ["BringListView-tag"]
   if (props.selected) {
-    className += " App-tag-selected"
+    classNames.push("BringListView-tag-selected")
   }
   return <li
-    className={className}
+    className={classNames.join(' ')}
     onClick={() => props.onSelectTag(props.name, !props.selected)}>
     {props.name}
   </li>
@@ -109,15 +102,15 @@ function BringListCategory(props: {
   let annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)]
 
-  return <div className="App-bringListCategoryContainer">
-    <h2 className="App-bringListCategoryHeader">
+  return <div className="BringListView-bringListCategoryContainer">
+    <h2 className="BringListView-bringListCategoryHeader">
       {props.blc.category}
       <BringListExplain
         isTrue={props.blcIsTrue}
         isFalse={props.blcIsFalse}
       />
     </h2>
-    <ul className="App-bringListCategory">
+    <ul className="BringListView-bringListCategory">
       {props.blc.items
         .map(annotate)
         .filter(([_, { isMatch }]) => isMatch)
@@ -153,12 +146,12 @@ function BringListItem(props: {
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
-  let liClassName = "App-bringListItem"
+  let liClassName = "BringListView-bringListItem"
   if (props.isStriked) {
-    liClassName = `${liClassName} App-bringListItemStriked`
+    liClassName = `${liClassName} BringListView-bringListItemStriked`
   }
   return <li className={liClassName}>
-    <input className="App-bringListItemCheckbox"
+    <input className="BringListView-bringListItemCheckbox"
       type="checkbox"
       onChange={(event) => props.setIsChecked(event.target.checked)}
       checked={props.isChecked}
@@ -169,7 +162,7 @@ function BringListItem(props: {
     </span>
 
     <span onClick={() => props.setIsStriked(!props.isStriked)}>
-      <BootstrapCross className="App-bootstrapCross" height={16} />
+      <BootstrapCross className="BringListView-bootstrapCross" height={16} />
     </span>
     <BringListExplain isTrue={props.isTrue} isFalse={props.isFalse} />
   </li>
@@ -179,12 +172,12 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
   let explainList: JSX.Element[] = []
   for (let tag of props.isTrue) {
     explainList.push(
-      <span key={tag} className="App-BringListExplainTrue">{tag}</span>
+      <span key={tag} className="BringListView-BringListExplainTrue">{tag}</span>
     )
   }
   for (let tag of props.isFalse) {
     explainList.push(
-      <span key={tag} className="App-BringListExplainFalse">!{tag}</span>
+      <span key={tag} className="BringListView-BringListExplainFalse">!{tag}</span>
     )
   }
 
@@ -198,7 +191,7 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
     }
   }
 
-  return <span className="App-BringListExplain">[
+  return <span className="BringListView-BringListExplain">[
     {explainJSX}
     ]</span>
 }
@@ -216,6 +209,7 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
 }
 
 function Settings(props: {
+  bringList: filterspec.BringList,
   tags: Set<string>,
   setTags: (tags: Set<string>) => void,
   nights: number,
@@ -225,15 +219,15 @@ function Settings(props: {
   const [resetConfirming, setResetConfirming] = useState(false)
   const [resetDebouncing, setResetDebouncing] = useState(false)
   const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
-  const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(DB)), [])
+  const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(props.bringList)), [props.bringList])
 
   let noneSelectedElement = props.tags.size === 0 ?
-    <div className="App-tagListNoneSelected">no tags selected</div> : <></>
+    <div className="BringListView-tagListNoneSelected">no tags selected</div> : <></>
 
   let resetButton;
   if (resetConfirming) {
     resetButton = <input
-      className="App-resetButton App-resetButtonConfirming"
+      className="BringListView-resetButton BringListView-resetButtonConfirming"
       type="button"
       value="click again to confirm"
       onClick={() => {
@@ -245,7 +239,7 @@ function Settings(props: {
     />
   } else {
     resetButton = <input
-      className="App-resetButton"
+      className="BringListView-resetButton"
       type="button"
       value="reset everything"
       onClick={() => {
@@ -259,9 +253,9 @@ function Settings(props: {
     />
   }
 
-  return <div className="App-settingsContainer">
-    <div className="App-tagListContainer App-smallVerticalMargin">
-      <h3 className="App-tagListHeader App-noVerticalMargin">Tags:</h3>
+  return <div className="BringListView-settingsContainer">
+    <div className="BringListView-tagListContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-tagListHeader BringListView-noVerticalMargin">Tags:</h3>
       {noneSelectedElement}
       <TagList
         allTags={tagList}
@@ -270,17 +264,17 @@ function Settings(props: {
           props.setTags(setAssign(props.tags, tag, enabled))}
       />
     </div>
-    <div className="App-nightsContainer App-smallVerticalMargin">
-      <h3 className="App-nightsHeader App-noVerticalMargin">Nachten:</h3>
-      <input className="App-nightsInput"
+    <div className="BringListView-nightsContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-nightsHeader BringListView-noVerticalMargin">Nachten:</h3>
+      <input className="BringListView-nightsInput"
         type="number"
         min="1"
         value={props.nights}
         onChange={(e) => props.setNights(e.target.valueAsNumber)}
       />
     </div>
-    <div className="App-resetButtonContainer App-smallVerticalMargin">
-      <h3 className="App-resetButtonHeader App-noVerticalMargin">Reset:</h3>
+    <div className="BringListView-resetButtonContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-resetButtonHeader BringListView-noVerticalMargin">Reset:</h3>
       <> </>
       {resetButton}
     </div>
@@ -288,38 +282,41 @@ function Settings(props: {
 }
 
 function BringListView() {
-  const [header, setHeader] = useState(loadHeader)
-  useEffect(() => saveHeader(header), [header])
+  const [header, setHeader] = useState(store.loadHeader)
+  useEffect(() => store.saveHeader(header), [header])
 
-  const [tags, setTags] = useState(loadTags)
-  useEffect(() => saveTags(tags), [tags])
+  const [tags, setTags] = useState(store.loadTags)
+  useEffect(() => store.saveTags(tags), [tags])
 
-  const [nights, setNights] = useState(loadNights)
-  useEffect(() => saveNights(nights), [nights])
+  const [nights, setNights] = useState(store.loadNights)
+  useEffect(() => store.saveNights(nights), [nights])
 
-  const [checkedItems, setCheckedItems] = useState(loadCheckedItems)
-  useEffect(() => saveCheckedItems(checkedItems), [checkedItems])
+  const [checkedItems, setCheckedItems] = useState(store.loadCheckedItems)
+  useEffect(() => store.saveCheckedItems(checkedItems), [checkedItems])
 
-  const [strikedItems, setStrikedItems] = useState(loadStrikedItems)
-  useEffect(() => saveStrikedItems(strikedItems), [strikedItems])
+  const [strikedItems, setStrikedItems] = useState(store.loadStrikedItems)
+  useEffect(() => store.saveStrikedItems(strikedItems), [strikedItems])
+
+  const bringList = useMemo(() => filterspec.parseDatabase(store.loadTemplateOrDefault()), [])
 
   let doResetAll = () => {
-    clearAllLocalStorage()
-    setHeader(loadHeader)
-    setTags(loadTags)
-    setNights(loadNights)
-    setCheckedItems(loadCheckedItems)
-    setStrikedItems(loadStrikedItems)
+    store.clearAllLocalStorage()
+    setHeader(store.loadHeader)
+    setTags(store.loadTags)
+    setNights(store.loadNights)
+    setCheckedItems(store.loadCheckedItems)
+    setStrikedItems(store.loadStrikedItems)
   }
 
   let filter = { tags, nights }
   return (
-    <div className="App">
+    <div className="BringListView">
       <Header
         header={header}
         setHeader={setHeader}
       />
       <Settings
+        bringList={bringList}
         tags={tags}
         setTags={setTags}
         nights={nights}
@@ -327,7 +324,7 @@ function BringListView() {
         doResetAll={doResetAll}
       />
       <BringList
-        bringList={DB}
+        bringList={bringList}
         filter={filter}
         checkedItems={checkedItems}
         updateCheckedItems={(name: string, isChecked: boolean) => {
@@ -354,104 +351,6 @@ function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
     set.delete(key)
   }
   return set
-}
-
-function loadStringSet(key: string): Set<string> {
-  let empty = new Set<string>()
-  let json = localStorage.getItem(key)
-  if (json === null) {
-    return empty
-  }
-  let tagsArray = JSON.parse(json)
-  if (tagsArray.constructor !== Array) {
-    console.error(`localStorage has invalid '${key}' array: '${json}'`)
-    localStorage.removeItem(key)
-    return empty
-  }
-  return new Set<string>(tagsArray)
-}
-
-function saveStringSet(key: string, set: Set<string>) {
-  let array = Array.from(set)
-  let json = JSON.stringify(array)
-  localStorage.setItem(key, json)
-}
-
-function loadTags(): Set<string> {
-  return loadStringSet(LOCALSTORAGE_TAGS)
-}
-
-function saveTags(tags: Set<string>) {
-  return saveStringSet(LOCALSTORAGE_TAGS, tags)
-}
-
-function loadCheckedItems(): Set<string> {
-  return loadStringSet(LOCALSTORAGE_CHECKED)
-}
-
-function saveCheckedItems(strikedItems: Set<string>) {
-  return saveStringSet(LOCALSTORAGE_CHECKED, strikedItems)
-}
-
-function loadStrikedItems(): Set<string> {
-  return loadStringSet(LOCALSTORAGE_STRIKED)
-}
-
-function saveStrikedItems(strikedItems: Set<string>) {
-  return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
-}
-
-function loadNights(): number {
-  let defaultNights = 3
-  let json = localStorage.getItem(LOCALSTORAGE_NIGHTS)
-  if (json === null) {
-    return defaultNights
-  }
-  let nights = JSON.parse(json)
-  if (typeof nights !== "number") {
-    console.error(`localStorage has invalid '${LOCALSTORAGE_NIGHTS}' number: '${json}'`)
-    localStorage.removeItem(LOCALSTORAGE_NIGHTS)
-    return defaultNights
-  }
-  return nights
-}
-
-function saveNights(nights: number) {
-  let json = JSON.stringify(nights)
-  localStorage.setItem(LOCALSTORAGE_NIGHTS, json)
-}
-
-function loadHeader(): string {
-  let defaultHeader = "backpack"
-  let json = localStorage.getItem(LOCALSTORAGE_HEADER)
-  if (json === null) {
-    return defaultHeader
-  }
-  let header = JSON.parse(json)
-  if (typeof header !== "string") {
-    console.error(`localStorage has invalid '${LOCALSTORAGE_HEADER}' string: '${json}'`)
-    localStorage.removeItem(LOCALSTORAGE_HEADER)
-    return header
-  }
-  return header
-}
-
-function saveHeader(header: string) {
-  let json = JSON.stringify(header)
-  localStorage.setItem(LOCALSTORAGE_HEADER, json)
-}
-
-function clearAllLocalStorage() {
-  let keys = [
-    LOCALSTORAGE_TAGS,
-    LOCALSTORAGE_CHECKED,
-    LOCALSTORAGE_STRIKED,
-    LOCALSTORAGE_NIGHTS,
-    LOCALSTORAGE_HEADER,
-  ]
-  for (let key of keys) {
-    localStorage.removeItem(key)
-  }
 }
 
 export default BringListView;

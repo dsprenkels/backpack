@@ -1,6 +1,6 @@
 import { BringList, parseDatabase } from "./filterspec"
 
-export const BRINGLIST_DATABASE_SRC: string =
+export const DEFAULT_BRINGLIST_TEMPLATE: string =
 `
 // Kleding tot 10 dagen
 # Kleding [ <10 ]
@@ -139,6 +139,4 @@ twennybar [ *1 <=3 & (vliegreis | kamperen | fietsen) ]
 1x twennybar [ !(vliegreis | kamperen | fietsen) ]
 `.trim()
 
-const BRINGLIST_DATABASE: BringList = parseDatabase(BRINGLIST_DATABASE_SRC)
-
-export default BRINGLIST_DATABASE
+export default DEFAULT_BRINGLIST_TEMPLATE

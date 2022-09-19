@@ -226,6 +226,14 @@ export function parseDatabase(input: string): BringList {
     return database
 }
 
+export function parseDatabaseChecked(db: string): BringList | Error {
+    try {
+        return parseDatabase(db)
+    } catch (err) {
+        return err as Error
+    }
+}
+
 export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
     const noMatch = { isMatch: false, isTrue: [], isFalse: [] }
     let isMatch

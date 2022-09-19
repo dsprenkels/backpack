@@ -1,15 +1,11 @@
-.App {
-  font-family: monospace;
-}
-
-.App-header {
+.BringListView-header {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.App-headerInput {
+.BringListView-headerInput {
   font-weight: bold;
   text-align: center;
   font-size: 1.8em;
@@ -19,30 +15,30 @@
   font-family: inherit;
 }
 
-.App-headerInput:hover {
+.BringListView-headerInput:hover {
   border-color: rgba(127, 127, 127, 255);
 }
 
-.App-link {
+.BringListView-link {
   color: #61dafb;
 }
 
-.App-noVerticalMargin {
+.BringListView-noVerticalMargin {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.App-smallVerticalMargin {
+.BringListView-smallVerticalMargin {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
-.App-settingsContainer {
+.BringListView-settingsContainer {
   margin-top: 1em;
   margin-bottom: 1em;
 }
 
-.App-tagListContainer {
+.BringListView-tagListContainer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -50,37 +46,37 @@
   /* Erase the margin on the children and put the margin on the container */
 }
 
-.App-tagListHeader,
-.App-nightsHeader,
-.App-tagList,
-.App-nightsInput,
-.App-resetButtonHeader,
-.App-resetButton {
+.BringListView-tagListHeader,
+.BringListView-nightsHeader,
+.BringListView-tagList,
+.BringListView-nightsInput,
+.BringListView-resetButtonHeader,
+.BringListView-resetButton {
   display: inline-flex;
 }
 
-.App-resetButtonConfirming {
+.BringListView-resetButtonConfirming {
   font-weight: bold;
   color: red;
 }
 
-.App-nightsInput {
+.BringListView-nightsInput {
   margin-left: 1em;
   max-width: 10ex;
 }
 
-.App-tagListNoneSelected {
+.BringListView-tagListNoneSelected {
   display: none;
 }
 
-.App-tagList {
+.BringListView-tagList {
   /* Undo list padding */
   padding-left: 0;
   flex-wrap: wrap;
   margin: 0;
 }
 
-.App-tag {
+.BringListView-tag {
   display: inline-flex;
   justify-content: flex-start;
   background-color: #f0f0f0;
@@ -93,37 +89,37 @@
   transition: background-color 0.1s, color 0.1s;
 }
 
-.App-tag:hover {
+.BringListView-tag:hover {
   text-decoration: underline;
 }
 
-.App-tag.App-tag-selected {
+.BringListView-tag.BringListView-tag-selected {
   background-color: #5cfa5c;
   color: #000000;
 }
 
 @media print {
-  .App-tagListNoneSelected {
+  .BringListView-tagListNoneSelected {
     display: inline-flex;
   }
 
-  .App-tag {
+  .BringListView-tag {
     display: none;
   }
 
-  .App-tag.App-tag-selected {
+  .BringListView-tag.BringListView-tag-selected {
     display: inline-flex;
   }
 }
 
 @media print {
-  .App-resetButtonContainer {
+  .BringListView-resetButtonContainer {
     display: none;
   }
 }
 
 @media print {
-  .App-bringListCategoryContainer {
+  .BringListView-bringListCategoryContainer {
     page-break-inside: avoid;
   }
 }
@@ -138,13 +134,13 @@
   }
 }
 
-.App-bringListCategory {
+.BringListView-bringListCategory {
   padding-left: 0;
   list-style: none outside;
   animation: highlightBLIChange 1s linear running;
 }
 
-.App-bringListItem {
+.BringListView-bringListItem {
   display: flex;
   flex-direction: row;
   width: fit-content;
@@ -152,7 +148,7 @@
   animation: fadein 0.1s linear;
 }
 
-.App-BringListExplain {
+.BringListView-BringListExplain {
   font-size: small;
   font-weight: normal;
   color: darkgray;
@@ -161,52 +157,52 @@
   display: none;
 }
 
-.App-BringListExplainTrue {
+.BringListView-BringListExplainTrue {
   color: darkgreen;
 }
 
-.App-BringListExplainFalse {
+.BringListView-BringListExplainFalse {
   color: darkred;
 }
 
-.App-bringListCategoryContainer:hover .App-bringListCategoryHeader .App-BringListExplain {
+.BringListView-bringListCategoryContainer:hover .BringListView-bringListCategoryHeader .BringListView-BringListExplain {
   display: inline;
 }
 
-.App-bringListItem:hover .App-BringListExplain {
+.BringListView-bringListItem:hover .BringListView-BringListExplain {
   display: inline;
 }
 
-.App-bringListItemStriked {
+.BringListView-bringListItemStriked {
   text-decoration: line-through;
 }
 
 @media print {
-  .App-bringListItemStriked {
+  .BringListView-bringListItemStriked {
     display: none;
   }
 }
 
-.App-bootstrapCross {
+.BringListView-bootstrapCross {
   margin: 0 auto;
   color: red;
   opacity: 0.5;
 }
 
-.App-bootstrapCross:hover {
+.BringListView-bootstrapCross:hover {
   opacity: 1.0;
 }
 
 @media print {
-  .App-bootstrapCross {
+  .BringListView-bootstrapCross {
     display: none;
   }
 }
 
-.App-bootstrapCrossActive {
+.BringListView-bootstrapCrossActive {
   opacity: 1.0;
 }
 
-.App-bringListItemCheckbox {
+.BringListView-bringListItemCheckbox {
   margin-right: 1ex;
 }
