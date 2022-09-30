@@ -114,7 +114,7 @@ export function otherTagExprParse(rest: string): parse.PResult<TagExpr> {
 }
 
 export function tagExprParse(rest: string): parse.PResult<TagExpr> {
-    return binOpExprOrOther.or(otherTagExpr).parse(rest)
+    return binOpExprOrOther.parse(rest)
 }
 
 export let everyNNights: P<EveryNNights> =
