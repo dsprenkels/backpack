@@ -25,7 +25,7 @@ const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 function makeRangeSingle(op: string, num: number): NightsRange {
     switch (op) {
         case "==": return { kind: "NightsRange", lo: num, hi: num }
-        case "<": return { kind: "NightsRange", hi: num }
+        case "<": return { kind: "NightsRange", hi: num - 1 }
         case "<=": return { kind: "NightsRange", hi: num }
         case ">": return { kind: "NightsRange", lo: num + 1 }
         case ">=": return { kind: "NightsRange", lo: num }
@@ -271,7 +271,7 @@ export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
             if (expr.lo !== undefined && filter.nights < expr.lo) {
                 return noMatch
             }
-            if (expr.hi !== undefined && filter.nights >= expr.hi) {
+            if (expr.hi !== undefined && filter.nights > expr.hi) {
                 return noMatch
             }
             return { isMatch: true, isTrue: [], isFalse: [] }
