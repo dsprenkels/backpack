@@ -15,7 +15,7 @@
   font-family: inherit;
 }
 
-.BringListView-headerInput:hover {
+.BringListView-headerInputEmpty {
   border-color: rgba(127, 127, 127, 255);
 }
 

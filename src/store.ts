@@ -105,7 +105,7 @@ export function saveNights(nights: number) {
 }
 
 export function loadHeader(): string {
-    let defaultHeader = "backpack"
+    let defaultHeader = ""
     let json = localStorage.getItem(LOCALSTORAGE_HEADER)
     if (json === null) {
         return defaultHeader

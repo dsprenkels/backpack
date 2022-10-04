@@ -7,13 +7,17 @@ export function Header(props: {
     setHeader: (header: string) => void,
 }) {
     const inputFieldGrowPadding = 2
-
+    let className = ["BringListView-headerInput"]
+    if (props.header == "") {
+        className.push("BringListView-headerInputEmpty")
+    }
     return (
         <header className="BringListView-header">
             <input
-                className="BringListView-headerInput"
+                className={className.join(" ")}
                 size={clamp(20, props.header.length + inputFieldGrowPadding, 50)}
                 value={props.header}
+                placeholder="untitled list"
                 onChange={(event) => props.setHeader(event.target.value)}
             />
         </header>
