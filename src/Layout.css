@@ -14,7 +14,7 @@
     text-decoration: none;
 }
 
-@media (max-width: 1000px) {
+@media print, screen and max-width: 1000px {
     .github-fork-ribbon {
         display: none;
     }
