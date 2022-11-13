@@ -98,3 +98,28 @@ test("complex items", () => {
     expect(filter.item.parse("rokjes/korte broeken[ *2.5 zwemmen | warm & 0-10]")).toEqual(expected)
 
 })
+
+test("not expr precedence", () => {
+    // Bug report: The following expression:
+    // 
+    //   [ !lichtgewicht | ipad ]
+    // 
+    // is parsed as [ !(lichtgewicht | ipad) ]; but the correct parse is:
+    //
+    //   [ (!lichtgewicht) | ipad ]
+
+    let expected = ok({
+        kind: "BinOpExpr",
+        op: "|",
+        left: {
+            kind: "NotExpr",
+            inner: {
+                kind: "TagIdent",
+            }
+        },
+        right: {
+            kind: "TagIdent",
+        },
+    })
+    expect(filter.tagExpr.parse("!lichtgewicht | ipad")).toMatchObject(expected)
+})
