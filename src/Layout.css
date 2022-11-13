@@ -1,3 +1,5 @@
+@import "github-fork-ribbon-css/gh-fork-ribbon.css";
+
 .Nav-container {
     display: block;
     margin: 0.5em;
@@ -10,4 +12,14 @@
 .Nav-LinkActive {
     color: inherit;
     text-decoration: none;
+}
+
+@media print, screen and max-width: 1000px {
+    .github-fork-ribbon {
+        display: none;
+    }
+}
+
+.github-fork-ribbon:before {
+    background-color: #666;
 }
