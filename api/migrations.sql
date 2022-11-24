@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS "migrations" (
+    "version" INTEGER PRIMARY KEY,
+    "migrated_at" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
