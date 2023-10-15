@@ -47,6 +47,7 @@ function App() {
       <SetAppStateContext.Provider value={(store) => {
         store = structuredClone(store)
         store.revision++
+        store.updatedAt = new Date()
         setAppStore(store)
       }}>
         <RouterProvider router={router} />
