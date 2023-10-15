@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import './BringListView.css';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 import { Header, Nav } from './Layout';
 import * as store from './store';
+import { AppStateContext, SetAppStateContext } from './main';
 
 
 function TagList(
@@ -264,58 +265,41 @@ function Settings(props: {
 }
 
 function BringListView() {
-  const [header, setHeader] = useState(store.loadHeader)
-  useEffect(() => store.saveHeader(header), [header])
-
-  const [tags, setTags] = useState(store.loadTags)
-  useEffect(() => store.saveTags(tags), [tags])
-
-  const [nights, setNights] = useState(store.loadNights)
-  useEffect(() => store.saveNights(nights), [nights])
-
-  const [checkedItems, setCheckedItems] = useState(store.loadCheckedItems)
-  useEffect(() => store.saveCheckedItems(checkedItems), [checkedItems])
-
-  const [strikedItems, setStrikedItems] = useState(store.loadStrikedItems)
-  useEffect(() => store.saveStrikedItems(strikedItems), [strikedItems])
-
-  const bringList = useMemo(() => filterspec.parseDatabase(store.loadTemplateOrDefault()), [])
+  const appStore = useContext(AppStateContext)
+  const SetAppStore = useContext(SetAppStateContext)
 
   let doResetAll = () => {
     store.clearAllLocalStorage()
-    setHeader(store.loadHeader)
-    setTags(store.loadTags)
-    setNights(store.loadNights)
-    setCheckedItems(store.loadCheckedItems)
-    setStrikedItems(store.loadStrikedItems)
+    SetAppStore?.(store.loadStore())
   }
 
-  let filter = { tags, nights }
+  const bringList = useMemo(() => filterspec.parseDatabase(appStore?.bringListTemplate ?? ""), [])
+  const filter = { tags: appStore?.tags ?? new Set(), nights: appStore?.nights ?? 0 }
   return (
     <div className="BringListView">
       <Header
-        header={header}
-        setHeader={setHeader}
+        header={appStore?.header ?? ""}
+        setHeader={(header) => SetAppStore!({ ...appStore!, header: header })}
       />
       <Nav />
       <Settings
         bringList={bringList}
-        tags={tags}
-        setTags={setTags}
-        nights={nights}
-        setNights={setNights}
+        tags={appStore?.tags ?? new Set()}
+        setTags={(tags) => SetAppStore!({ ...appStore!, tags: tags })}
+        nights={appStore?.nights ?? 0}
+        setNights={(nights) => SetAppStore!({ ...appStore!, nights: nights })}
         doResetAll={doResetAll}
       />
       <BringList
         bringList={bringList}
         filter={filter}
-        checkedItems={checkedItems}
+        checkedItems={appStore?.checkedItems ?? new Set()}
         updateCheckedItems={(name: string, isChecked: boolean) => {
-          setCheckedItems(setAssign(checkedItems, name, isChecked))
+          SetAppStore!({ ...appStore!, checkedItems: setAssign(appStore!.checkedItems, name, isChecked) })
         }}
-        strikedItems={strikedItems}
+        strikedItems={appStore?.strikedItems ?? new Set()}
         updateStrikedItems={(name: string, isStriked: boolean) => {
-          setStrikedItems(setAssign(strikedItems, name, isStriked))
+          SetAppStore!({ ...appStore!, strikedItems: setAssign(appStore!.strikedItems, name, isStriked) })
         }}
       />
     </div>
