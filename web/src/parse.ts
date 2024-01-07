@@ -51,8 +51,6 @@ export abstract class P<T> {
                 return { ok: true, value: [item1, item2], rest }
             }
         }()
-
-
     }
 
     andMap<U, V>(f: (x1: T, x2: U) => V, p2: P<U>): P<V> {

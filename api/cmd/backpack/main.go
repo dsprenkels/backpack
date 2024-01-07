@@ -16,6 +16,9 @@ var envHelp []envHelpLine = []envHelpLine{
 	{"GIN_MODE", "gin mode, set to 'debug' or 'release'", false},
 	{"BACKPACK_DB_URL", "postgresql database connection specifier or url", true},
 	{"BACKPACK_SESSION_SECRET", "global session secret", true},
+	{"BACKPACK_GITHUB_CLIENT_ID", "github oauth client id", true},
+	{"BACKPACK_GITHUB_CLIENT_SECRET", "github oauth client secret", true},
+	{"BACKPACK_ROOT_URL", "root url", true},
 	{"PORT", "port on which to listen for connections", false},
 }
 

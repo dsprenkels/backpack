@@ -2,22 +2,40 @@ package backpack
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	ginglog "github.com/szuecs/gin-glog"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/github"
 )
 
-var sessionSecret []byte = []byte(os.Getenv("BACKPACK_SESSION_SECRET"))
+const MAX_STORE_LENGTH = 131072
+
+var (
+	sessionSecret                       = os.Getenv("BACKPACK_SESSION_SECRET")
+	github_client_id                    = os.Getenv("BACKPACK_GITHUB_CLIENT_ID")
+	github_client_secret                = os.Getenv("BACKPACK_GITHUB_CLIENT_SECRET")
+	rootURL                             = os.Getenv("BACKPACK_ROOT_URL")
+	oauthConfig          *oauth2.Config = &oauth2.Config{
+		RedirectURL:  strings.TrimSuffix(rootURL, "/") + "/auth/github/callback",
+		ClientID:     github_client_id,
+		ClientSecret: github_client_secret,
+		Scopes:       []string{"read:user"},
+		Endpoint:     github.Endpoint,
+	}
+	oauthStateString = "random"
+)
 
 type AppConfig struct{}
 
@@ -40,121 +58,146 @@ func setupRouter() *gin.Engine {
 	router.SetTrustedProxies([]string{"localhost"})
 	router.Use(ginglog.Logger(5 * time.Second))
 	router.Use(gin.Recovery())
+
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{rootURL}
+	if gin.DebugMode == "debug" {
+		corsConfig.AllowOrigins = append(corsConfig.AllowOrigins, "http://localhost:5173")
+		corsConfig.AllowCredentials = true
+	}
+	router.Use(cors.New(corsConfig))
+
 	if len(sessionSecret) == 0 {
 		glog.Fatal("BACKPACK_SESSION_SECRET is empty")
 	}
 	store := cookie.NewStore([]byte(sessionSecret))
 	router.Use(sessions.Sessions("backpack_session", store))
 
-	router.POST("/api/template", newListTemplate)
-	router.GET("/api/template/:id", getListTemplate)
-	router.PUT("/api/template/:id", updateListTemplate)
+	router.GET("/backpack/auth/login", login)
+	router.GET("/backpack/auth/github/callback", oauthCallback)
+
+	router.GET("/backpack/api/userstore", getUserStore)
+	router.PUT("/backpack/api/userstore", updateUserStore)
 	return router
 }
 
-type template struct {
-	ID       uuid.UUID
-	Title    string `json:"title"  binding:"required"`
-	Contents string `json:"contents"`
+func login(c *gin.Context) {
+	url := oauthConfig.AuthCodeURL(oauthStateString)
+	c.Redirect(http.StatusTemporaryRedirect, url)
 }
 
-func newListTemplate(ctx *gin.Context) {
-	var t template
-	var err error
+func oauthCallback(c *gin.Context) {
+	session := sessions.Default(c)
+	state := c.Query("state")
+	if state != oauthStateString {
+		err := fmt.Errorf("invalid oauth state")
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return
+	}
 
-	err = ctx.BindJSON(&t)
+	code := c.Query("code")
+	token, err := oauthConfig.Exchange(c, code)
 	if err != nil {
-		panic(err)
+		err = errors.Wrap(err, "oauth exchange")
+		glog.Error(err)
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	sql := `
-INSERT INTO "templates" ("title", "contents", "created_at", "updated_at")
-VALUES (
-	$1,
-	$1,
-	CURRENT_TIMESTAMP,
-	CURRENT_TIMESTAMP
+INSERT INTO "oauth_identities" ("provider", "token_type", "access_token", "scope")
+VALUES($1, $2, $3, $4)
+RETURNING "id"
+`
+	row := db.QueryRow(context.Background(), sql,
+		"github",
+		token.TokenType,
+		token.AccessToken,
+		strings.Join(oauthConfig.Scopes, ","),
 	)
-RETURNING "id", "title", "contents";
-`
-	row := db.QueryRow(context.Background(), sql, t.Title, t.Contents)
-	err = row.Scan(&t.ID, &t.Title, &t.Contents)
+	var id int
+	err = row.Scan(&id)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError,
-			errors.Wrap(err, "failed to query database"))
+		err = errors.Wrapf(err, "oauth insert into db")
+		glog.Error(err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-
-	ctx.JSON(http.StatusOK, gin.H{
-		"id":       t.ID,
-		"title":    t.Title,
-		"contents": t.Contents,
-	})
+	glog.Infof("registered new oauth identity with id %d", id)
+	session.Set("oauth_id", id)
+	session.Save()
+	if err = session.Save(); err != nil {
+		err = errors.Wrap(err, "session save")
+		glog.Error(err)
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true, "oauth_id": id})
 }
 
-func getListTemplate(ctx *gin.Context) {
-	var err error
-	var t template
+func getUserStore(c *gin.Context) {
+	session := sessions.Default(c)
+	oauth_id := session.Get("oauth_id")
 
-	t.ID, err = uuid.Parse(ctx.Param("id"))
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest,
-			errors.Wrap(err, "could not parse uuid"))
+	if oauth_id == nil {
+		c.AbortWithError(http.StatusUnauthorized, errors.New("no oauth_id in session"))
 		return
 	}
 
-	sql := `
-SELECT "title", "contents" FROM "templates" WHERE "id"=$1
-`
-	err = db.QueryRow(ctx, sql, t.ID).Scan(&t.Title, &t.Contents)
-	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		ctx.AbortWithError(http.StatusNotFound,
-			errors.Errorf("template %s not found", t.ID))
-		return
-	}
+	stmt := `SELECT "store" FROM "user_stores" WHERE "identity_id" = $1 LIMIT 1;`
+	row := db.QueryRow(context.Background(), stmt, oauth_id)
+	var store string
+	err := row.Scan(&store)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError,
-			errors.Wrap(err, "failed to query database"))
+		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database select"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"id":       t.ID,
-		"title":    t.Title,
-		"contents": t.Contents,
-	})
+	c.JSON(http.StatusOK, gin.H{"ok": true, "store": store})
 }
-func updateListTemplate(ctx *gin.Context) {
-	var err error
-	var t template
 
-	t.ID, err = uuid.Parse(ctx.Param("id"))
-	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest,
-			errors.Wrap(err, "could not parse uuid"))
+func updateUserStore(c *gin.Context) {
+	session := sessions.Default(c)
+	oauth_id := session.Get("oauth_id")
+	if oauth_id == nil {
+		c.AbortWithError(http.StatusUnauthorized, errors.New("no oauth_id in session"))
 		return
 	}
 
-	sql := `
-UPDATE "templates"
-SET "title" = $1, "contents" = $2, "modified_at" = TIMESTAMP
-WHERE "id" = $3
-RETURNING "id",	"title", "contents";
-	`
-	row := db.QueryRow(context.Background(), sql, t.Title, t.Contents, t.ID)
-	err = row.Scan(&t.ID, &t.Title, &t.Contents)
-	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		ctx.AbortWithError(http.StatusNotFound,
-			errors.Errorf("template %s not found", t.ID))
-		return
+	var req struct {
+		Store string `json:"store" binding:"required"`
 	}
+	err := c.BindJSON(&req)
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError,
-			errors.Wrap(err, "failed to query database"))
+		c.AbortWithError(http.StatusBadRequest, errors.Wrap(err, "bind json"))
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{
-		"id":       t.ID,
-		"title":    t.Title,
-		"contents": t.Contents,
-	})
+	if len(req.Store) > MAX_STORE_LENGTH {
+		c.AbortWithError(http.StatusBadRequest, errors.New("max store size exceeded"))
+		return
+	}
+
+	var stmt string
+	tx, err := db.Begin(context.Background())
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database begin"))
+		return
+	}
+	defer tx.Rollback(context.Background())
+	stmt = `DELETE FROM "user_stores" WHERE "identity_id" = $1`
+	_, err = tx.Exec(context.Background(), stmt, oauth_id)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database delete"))
+		return
+	}
+	stmt = `INSERT INTO "user_stores" ("identity_id", "store") VALUES ($1, $2)`
+	_, err = tx.Exec(context.Background(), stmt, oauth_id, req.Store)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database insert"))
+		return
+	}
+	err = tx.Commit(context.Background())
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database commit"))
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
