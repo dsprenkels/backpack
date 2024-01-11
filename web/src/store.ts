@@ -63,9 +63,14 @@ export function fromSerializable(store: SerializableStore): Store {
 }
 
 export async function loadStore(): Promise<Store> {
-    let remoteStore = await loadStoreFromServer()
+    let remoteStore
     let localStore = loadStoreLocal()
-    if (remoteStore.revision > localStore.revision) {
+    try {
+        remoteStore = await loadStoreFromServer()
+    } catch (error) {
+        console.warn("error loading store from server, using local store", error)
+    }
+    if (remoteStore !== undefined && remoteStore.revision > localStore.revision) {
         console.info("remote store is newer, overwriting local store")
         saveStoreLocal(remoteStore)
         return fromSerializable(remoteStore)
@@ -95,7 +100,7 @@ export async function saveStoreOnServer(store: SerializableStore) {
         console.warn("timeout saving store on server")
         controller.abort()
     }, 1000)
-    let response = await fetch("http://localhost:8080/backpack/api/userstore", {
+    let response = await fetch("/backpack/api/userstore", {
         method: "PUT",
         body: JSON.stringify({ store: JSON.stringify(store) }),
         headers: { "Content-Type": "application/json" },
@@ -116,7 +121,7 @@ export async function loadStoreFromServer(): Promise<SerializableStore> {
         console.warn("timeout loading store from server")
         controller.abort()
     }, 1000)
-    let response = await fetch("http://localhost:8080/backpack/api/userstore", {
+    let response = await fetch("/backpack/api/userstore", {
         method: "GET",
         credentials: "include",
         signal: controller.signal,
@@ -124,7 +129,7 @@ export async function loadStoreFromServer(): Promise<SerializableStore> {
     if (!response.ok) {
         let err = new Error("error loading store from server")
         console.error(err, response)
-        throw err
+        throw response
     }
     clearTimeout(timeoutID)
     return await response.json() as SerializableStore

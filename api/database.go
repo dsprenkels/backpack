@@ -43,6 +43,64 @@ CREATE TABLE "user_stores" (
 
 CREATE INDEX "user_stores_created_at_index" ON "user_stores" ("created_at");`,
 	},
+	{
+		Name: "2024-01-10_175500_users",
+		Up: `
+CREATE TABLE users (
+	"id" SERIAL PRIMARY KEY,
+	"github_id" INTEGER NOT NULL,
+	"github_login" TEXT,
+	"displayname" TEXT,
+	"avatar_url" TEXT,
+	"created_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX users_github_id_index ON users (github_id);
+CREATE INDEX users_created_at_index ON users (created_at);
+
+ALTER TABLE "user_stores" ADD COLUMN "user_id" INTEGER REFERENCES "users" ("id");
+CREATE INDEX "user_stores_user_id_index" ON "user_stores" ("user_id");
+
+ALTER TABLE "oauth_identities" ADD COLUMN "user_id" INTEGER REFERENCES "users" ("id");
+CREATE INDEX "oauth_identities_user_id_index" ON "oauth_identities" ("user_id");
+`,
+	},
+	{
+		Name: "2024-01-10_180300_updated_at",
+		Up: `
+CREATE FUNCTION "update_updated_at"() RETURNS TRIGGER AS $$
+BEGIN
+	NEW.updated_at = NOW();
+	RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+ALTER TABLE "oauth_identities" ADD COLUMN "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+CREATE INDEX "oauth_identities_updated_at_index" ON "oauth_identities" ("updated_at");
+CREATE TRIGGER "oauth_identities_update_updated_at"
+BEFORE UPDATE ON "oauth_identities"
+FOR EACH ROW
+EXECUTE PROCEDURE "update_updated_at"();
+
+ALTER TABLE "user_stores" ADD COLUMN "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;		
+CREATE INDEX "user_stores_updated_at_index" ON "user_stores" ("updated_at");
+CREATE TRIGGER "user_stores_update_updated_at"
+BEFORE UPDATE ON "user_stores"
+FOR EACH ROW
+EXECUTE PROCEDURE "update_updated_at"();
+
+ALTER TABLE "users" ADD COLUMN "updated_at" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+CREATE INDEX "users_updated_at_index" ON "users" ("updated_at");
+CREATE TRIGGER "users_update_updated_at"
+BEFORE UPDATE ON "users"
+FOR EACH ROW
+EXECUTE PROCEDURE "update_updated_at"();`,
+	},
+	{
+		Name: "2024-01-12_002600_user_store_user_id",
+		Up: `
+ALTER TABLE "user_stores" DROP COLUMN "identity_id";`,
+	},
 }
 
 var db *pgxpool.Pool
