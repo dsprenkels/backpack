@@ -4,62 +4,25 @@ const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
 const LOCALSTORAGE_STORE = `${LOCALSTORAGE_PREFIX}store`
 const DEFAULT_STORE = {
     bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
-    tags: new Set<string>(),
-    checkedItems: new Set<string>(),
-    strikedItems: new Set<string>(),
+    tags: {},
+    checkedItems: {},
+    strikedItems: {},
     nights: 0,
     header: "",
     revision: 0,
     updatedAt: undefined,
 }
 
+
 export interface Store {
     bringListTemplate: string,
-    tags: Set<string>,
-    checkedItems: Set<string>,
-    strikedItems: Set<string>,
+    tags: {[key: string]: true},
+    checkedItems: { [key: string]: true },
+    strikedItems: { [key: string]: true},
     nights: number,
     header: string,
     revision: number,
     updatedAt?: Date,
-}
-
-export interface SerializableStore {
-    bringListTemplate: string,
-    tags: Array<string>,
-    checkedItems: Array<string>,
-    strikedItems: Array<string>,
-    nights: number,
-    header: string,
-    revision: number,
-    updatedAt?: string,
-}
-
-export function toSerializable(store: Store): SerializableStore {
-    return {
-        bringListTemplate: store.bringListTemplate,
-        tags: Array.from(store.tags),
-        checkedItems: Array.from(store.checkedItems),
-        strikedItems: Array.from(store.strikedItems),
-        nights: store.nights,
-        header: store.header,
-        revision: store.revision,
-        updatedAt: store.updatedAt?.toISOString(),
-    }
-}
-
-export function fromSerializable(store: SerializableStore): Store {
-    return {
-        bringListTemplate: store.bringListTemplate,
-        tags: new Set(store.tags),
-        checkedItems: new Set(store.checkedItems),
-        strikedItems: new Set(store.strikedItems),
-        nights: store.nights,
-        header: store.header,
-        revision: store.revision,
-        updatedAt: new Date(store.updatedAt ?? 0),
-    }
-
 }
 
 export async function loadStore(): Promise<Store> {
@@ -70,31 +33,30 @@ export async function loadStore(): Promise<Store> {
         if (typeof remoteStore === "object" && remoteStore.revision > localStore.revision) {
             console.info("remote store is newer, overwriting local store")
             saveStoreLocal(remoteStore)
-            return fromSerializable(remoteStore)
+            return remoteStore
         }
     }
     catch (error) {
         console.warn("error loading store from server, using local store", error)
     }
-    return fromSerializable(localStore)
+    return localStore
 }
 
-export function loadStoreLocal(): SerializableStore {
+export function loadStoreLocal(): Store {
     return loadValue(LOCALSTORAGE_STORE, (json?: any) => json ?? DEFAULT_STORE)
 }
 
 export function saveStore(store: Store) {
-    let serializableStore = toSerializable(store)
-    serializableStore.revision++
-    saveStoreLocal(serializableStore)
-    saveStoreOnServer(serializableStore)
+    store.revision++
+    saveStoreLocal(store)
+    saveStoreOnServer(store)
 }
 
-export function saveStoreLocal(store: SerializableStore) {
+export function saveStoreLocal(store: Store) {
     saveValue(LOCALSTORAGE_STORE, store)
 }
 
-export async function saveStoreOnServer(store: SerializableStore) {
+export async function saveStoreOnServer(store: Store) {
     console.debug("saving store on server", store)
     let controller = new AbortController()
     let timeoutID = setTimeout(() => {
@@ -116,7 +78,7 @@ export async function saveStoreOnServer(store: SerializableStore) {
     clearTimeout(timeoutID)
 }
 
-export async function loadStoreFromServer(): Promise<SerializableStore> {
+export async function loadStoreFromServer(): Promise<Store> {
     let controller = new AbortController()
     let timeoutID = setTimeout(() => {
         console.warn("timeout loading store from server")
@@ -133,19 +95,11 @@ export async function loadStoreFromServer(): Promise<SerializableStore> {
         throw response
     }
     clearTimeout(timeoutID)
-    return await response.json() as SerializableStore
+    return await response.json() as Store
 }
 
 export function clearAllLocalStorage() {
     localStorage.removeItem(LOCALSTORAGE_STORE)
-}
-
-function decodeStringSet(json?: any): Set<string> {
-    return new Set<string>(json)
-}
-
-function encodeStringSet(set: Set<string>): Array<string> {
-    return Array.from(set)
 }
 
 function loadValue<T>(key: string, constructor: (json?: any) => T): T {
