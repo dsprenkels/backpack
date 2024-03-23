@@ -6,7 +6,7 @@ import * as ExpressSession from 'express-session'
 import * as passport from 'passport'
 import { Strategy as GitHubStrategy } from 'passport-github'
 import { AppDataSource } from "./data-source"
-import { OAuthIdentity, Session, User } from "./entities"
+import { OAuthIdentity, Session, User, UserStore } from "./entities"
 
 
 let port: number
@@ -105,6 +105,34 @@ AppDataSource.initialize().then(async () => {
         }
     );
     app.get(`${rootURL}/auth/github`, passport.authenticate('github'));
+
+    // Handle userstore API
+    app.get(`${rootURL}/api/userstore`, async (req, res) => {
+        if (!req.isAuthenticated()) {
+            res.status(401).send('Unauthorized')
+            return
+        }
+        let user = req.user as User
+        let repo = AppDataSource.getRepository(UserStore)
+        let store = await repo.findOneBy({ user: { id: user.id } })
+        res.json(store)
+    })
+    app.put(`${rootURL}/api/userstore`, async (req, res) => {
+        if (!req.isAuthenticated()) {
+            res.status(401).send('Unauthorized')
+            return
+        }
+        let user = req.user as User
+        let repo = AppDataSource.getRepository(UserStore)
+        let store = await repo.findOneBy({ user: { id: user.id } })
+        if (!store) {
+            store = new UserStore()
+            store.user = user
+        }
+        store.content = req.body.store
+        await repo.save(store)
+        res.json(store)
+    })
 
     // Only in development, redirect all other requests to vite
     if (process.env.NODE_ENV === 'development') {
