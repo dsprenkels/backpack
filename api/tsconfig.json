@@ -1,13 +1,15 @@
 {
    "compilerOptions": {
       "lib": [
-         "es5",
-         "es6"
+         "ES2021"
       ],
-      "target": "es5",
-      "module": "commonjs",
-      "moduleResolution": "node",
+      "target": "ES2021",
+      "module": "CommonJS",
+      "moduleResolution": "Node",
       "outDir": "./build",
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "noEmit": true,
       "emitDecoratorMetadata": true,
       "experimentalDecorators": true,
       "sourceMap": true,

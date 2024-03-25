@@ -8,30 +8,38 @@ import { Strategy as GitHubStrategy } from 'passport-github'
 import { AppDataSource } from "./data-source"
 import { OAuthIdentity, Session, User, UserStore } from "./entities"
 
-
 let port: number
 if (process.env.PORT) {
     port = parseInt(process.env.PORT);
-} else {
+} else if (process.env.NODE_ENV === 'development') {
     console.info('No PORT environment variable detected, using default port 3000');
     port = 3000;
+} else {
+    throw new Error('PORT environment is not set')
 }
 
-let rootURL = process.env.BACKPACK_ROOT_URL
-if (rootURL.endsWith('/')) {
-    rootURL = rootURL.slice(0, -1)
+let rootURL = new URL(process.env.ROOT_URL)
+if (rootURL.pathname.endsWith('/')) {
+    rootURL.pathname = rootURL.pathname.slice(0, -1)
 }
 
 AppDataSource.initialize().then(async () => {
     const app = express();
+    if (app.get('env') === 'production') {
+        app.set('trust proxy', 1)
+    }
 
-    // Bodu parser
-    app.use(bodyParser.json())
+    // CORS configuration
+    app.use(cors({
+        origin: rootURL.origin,
+        methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
+        credentials: true,
+    }));
 
     // Session configuration
-    const sessionSecret = process.env.BACKPACK_SESSION_SECRET;
+    const sessionSecret = process.env.SESSION_SECRET;
     if (!sessionSecret) {
-        throw new Error('BACKPACK_SESSION_SECRET environment variable is not set')
+        throw new Error('SESSION_SECRET environment variable is not set')
     }
     app.use(ExpressSession({
         resave: false,
@@ -41,21 +49,21 @@ AppDataSource.initialize().then(async () => {
         }).connect(AppDataSource.getRepository(Session)),
         secret: sessionSecret,
         cookie: {
-            secure: app.get('env') === 'production',
+            secure: "auto",
         }
     }));
 
-    // CORS configuration
-    app.use(cors({
-        credentials: true,
-        origin: '*' // Adjust according to your needs
-    }));
+    // Body parser
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json())
 
     // Passport GitHub OAuth configuration
+    app.use(passport.initialize());
+    app.use(passport.session());
     passport.use(new GitHubStrategy({
-        clientID: process.env.BACKPACK_GITHUB_CLIENT_ID || '',
-        clientSecret: process.env.BACKPACK_GITHUB_CLIENT_SECRET || '',
-        callbackURL: `${rootURL}/auth/github/callback`,
+        clientID: process.env.GITHUB_CLIENT_ID,
+        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        callbackURL: `${rootURL.toString()}/auth/github/callback`,
     },
         async (accessToken, _refreshToken, profile, done) => {
             let user: User = null
@@ -82,10 +90,11 @@ AppDataSource.initialize().then(async () => {
                 oauthIdentity.accessToken = accessToken
                 oauthIdentity.scope = 'user'
                 await manager.save(oauthIdentity)
-            }).then(() => done(null, user), (error) => done(error, user))
+            }).then(() => {
+                console.debug(`GitHub user '${user.githubID}' logged in`)
+                done(null, user)
+            }, (error) => done(error, user))
         }));
-    app.use(passport.initialize());
-    app.use(passport.session());
 
     // Serialize and deserialize user instances to and from the session.
     passport.serializeUser(function (user: Express.User, cb) {
@@ -97,17 +106,16 @@ AppDataSource.initialize().then(async () => {
     });
 
     // Routes
-    app.get(`${rootURL}/auth/github/callback`,
-        passport.authenticate('github', { failureRedirect: '/backpack/auth/github' }),
-        function (_req, res) {
-            // Successful authentication, redirect home.
-            res.redirect(`${rootURL}/`);
-        }
+    app.get(`${rootURL.pathname}/auth/github/callback`,
+        passport.authenticate('github', {
+            successRedirect: `${rootURL.pathname}/`,
+            failureRedirect: '/backpack/auth/github',
+        }),
     );
-    app.get(`${rootURL}/auth/github`, passport.authenticate('github'));
+    app.get(`${rootURL.pathname}/auth/github`, passport.authenticate('github'));
 
     // Handle userstore API
-    app.get(`${rootURL}/api/userstore`, async (req, res) => {
+    app.get(`${rootURL.pathname}/api/userstore`, async (req, res) => {
         if (!req.isAuthenticated()) {
             res.status(401).send('Unauthorized')
             return
@@ -117,7 +125,7 @@ AppDataSource.initialize().then(async () => {
         let store = await repo.findOneBy({ user: { id: user.id } })
         res.json(store)
     })
-    app.put(`${rootURL}/api/userstore`, async (req, res) => {
+    app.put(`${rootURL.pathname}/api/userstore`, async (req, res) => {
         if (!req.isAuthenticated()) {
             res.status(401).send('Unauthorized')
             return
@@ -153,6 +161,6 @@ AppDataSource.initialize().then(async () => {
 
     // Start express server
     app.listen(port)
-    console.debug(`Express server has started at http://localhost:${port}${rootURL}`)
+    console.debug(`Express server has started at ${rootURL}`)
 
 }).catch(error => console.log(error))
