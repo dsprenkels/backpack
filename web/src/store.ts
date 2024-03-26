@@ -1,128 +1,127 @@
-import DEFAULT_BRINGLIST_TEMPLATE from "./template"
+import { Action, Dispatch, Middleware, ThunkAction, UnknownAction, configureStore, createAction, createReducer } from '@reduxjs/toolkit'
+import DEFAULT_BRINGLIST_TEMPLATE from './template'
 
-const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
-const LOCALSTORAGE_STORE = `${LOCALSTORAGE_PREFIX}store`
-const DEFAULT_STORE = {
+const LOCALSTORAGE_KEY = "nl.as8.backpack.redux_store"
+
+export interface RootState {
+    bringListTemplate: string,
+    tags: { [key: string]: true },
+    checkedItems: { [key: string]: true },
+    strikedItems: { [key: string]: true },
+    nights: number,
+    header: string,
+    revision: number,
+    updatedAt: string,
+}
+
+const defaultState: RootState = {
     bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
     tags: {},
     checkedItems: {},
     strikedItems: {},
-    nights: 0,
+    nights: 3,
     header: "",
     revision: 0,
-    updatedAt: undefined,
+    updatedAt: new Date().toISOString(),
 }
-
-
-export interface Store {
-    bringListTemplate: string,
-    tags: {[key: string]: true},
-    checkedItems: { [key: string]: true },
-    strikedItems: { [key: string]: true},
-    nights: number,
-    header: string,
-    revision: number,
-    updatedAt?: Date,
-}
-
-export async function loadStore(): Promise<Store> {
-    let remoteStore
-    let localStore = loadStoreLocal()
-    try {
-        remoteStore = await loadStoreFromServer()
-        if (typeof remoteStore === "object" && remoteStore.revision > localStore.revision) {
-            console.info("remote store is newer, overwriting local store")
-            saveStoreLocal(remoteStore)
-            return remoteStore
+const initialState = (() => {
+    const storedState = localStorage.getItem(LOCALSTORAGE_KEY)
+    let parsedState = {}
+    if (storedState) {
+        try {
+            parsedState = JSON.parse(storedState)
+        } catch (e) {
+            console.error("parsing stored state, falling back to default state", e)
+            return defaultState
         }
+        return { ...defaultState, ...parsedState }
     }
-    catch (error) {
-        console.warn("error loading store from server, using local store", error)
-    }
-    return localStore
-}
+    return defaultState
+})()
 
-export function loadStoreLocal(): Store {
-    return loadValue(LOCALSTORAGE_STORE, (json?: any) => json ?? DEFAULT_STORE)
-}
+export const setHeader = createAction<string>('setHeader')
+export const setNights = createAction<number>('setNights')
+export const toggleTag = createAction<string>('toggleTag')
+export const setCheckedBLItem = createAction<{ item: string, checked: boolean }>('setCheckedBLItem')
+export const setStrikedBLItem = createAction<{ item: string, striked: boolean }>('setStrikedBLItem')
+export const setBLT = createAction<string>('setBLT')
+export const resetAll = createAction('resetAll')
 
-export function saveStore(store: Store) {
-    store.revision++
-    saveStoreLocal(store)
-    saveStoreOnServer(store)
-}
+const rootReducer = createReducer(initialState, builder => {
+    builder
+        .addCase(setHeader, (state, action) => {
+            state.header = action.payload
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(setNights, (state, action) => {
+            state.nights = action.payload
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(toggleTag, (state, action) => {
+            if (state.tags[action.payload]) {
+                delete state.tags[action.payload]
+            } else {
+                state.tags[action.payload] = true
+            }
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(setCheckedBLItem, (state, action) => {
+            if (action.payload.checked) {
+                state.checkedItems[action.payload.item] = true
+            } else if (action.payload.item in state.checkedItems) {
+                delete state.checkedItems[action.payload.item]
+            }
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(setStrikedBLItem, (state, action) => {
+            if (action.payload.striked) {
+                state.strikedItems[action.payload.item] = true
+            } else if (action.payload.item in state.strikedItems) {
+                delete state.strikedItems[action.payload.item]
+            }
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(setBLT, (state, action) => {
+            state.bringListTemplate = action.payload
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+        .addCase(resetAll, (state) => {
+            state.tags = {}
+            state.checkedItems = {}
+            state.strikedItems = {}
+            state.nights = 3
+            state.header = ""
+            state.updatedAt = new Date().toISOString()
+            state.revision = state.revision + 1
+        })
+})
 
-export function saveStoreLocal(store: Store) {
-    saveValue(LOCALSTORAGE_STORE, store)
-}
-
-export async function saveStoreOnServer(store: Store) {
-    console.debug("saving store on server", store)
-    let controller = new AbortController()
-    let timeoutID = setTimeout(() => {
-        console.warn("timeout saving store on server")
-        controller.abort()
-    }, 1000)
-    let response = await fetch("/backpack/api/userstore", {
-        method: "PUT",
-        body: JSON.stringify({ store: JSON.stringify(store) }),
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        signal: controller.signal,
-    })
-    if (!response.ok) {
-        console.error("error saving store on server", response)
+const localStorageMiddleware: Middleware<{}, RootState, Dispatch<UnknownAction>> = (store) => (next) => (action) => {
+    const result = next(action);
+    if ((action as UnknownAction).type === resetAll.type) {
+        localStorage.removeItem(LOCALSTORAGE_KEY);
     } else {
-        console.debug("saved store on server", response)
+        localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(store.getState()));
     }
-    clearTimeout(timeoutID)
-}
+    return result;
+};
 
-export async function loadStoreFromServer(): Promise<Store> {
-    let controller = new AbortController()
-    let timeoutID = setTimeout(() => {
-        console.warn("timeout loading store from server")
-        controller.abort()
-    }, 1000)
-    let response = await fetch("/backpack/api/userstore", {
-        method: "GET",
-        credentials: "include",
-        signal: controller.signal,
-    })
-    if (!response.ok) {
-        let err = new Error("error loading store from server")
-        console.error(err, response)
-        throw response
-    }
-    clearTimeout(timeoutID)
-    return await response.json() as Store
-}
+export const store = configureStore({
+    reducer: rootReducer,
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(localStorageMiddleware)
+})
 
-export function clearAllLocalStorage() {
-    localStorage.removeItem(LOCALSTORAGE_STORE)
-}
-
-function loadValue<T>(key: string, constructor: (json?: any) => T): T {
-    let json = localStorage.getItem(key)
-    if (json === null) {
-        return constructor()
-    }
-    let value
-    try {
-        value = constructor(JSON.parse(json))
-    } catch (e) {
-        console.error(`decoding localStorage '${key}' failed (error: ${e}), deleting entry and backing up to '${key}~': ${json}`)
-        localStorage.setItem(`${key}~`, json)
-        localStorage.removeItem(key)
-        return constructor()
-    }
-    return value
-}
-
-function saveValue<T>(key: string, value: T) {
-    saveValueTransform(key, value, x => x)
-}
-
-function saveValueTransform<T, U>(key: string, value: T, transform: (x: T) => U) {
-    localStorage.setItem(key, JSON.stringify(transform(value)))
-}
+export type AppStore = typeof store
+export type AppDispatch = AppStore["dispatch"]
+export type AppThunk<ThunkReturnType = void> = ThunkAction<
+    ThunkReturnType,
+    RootState,
+    unknown,
+    Action
+>

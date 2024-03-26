@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
 import "./BringListEdit.css"
-import { BringList, parseDatabaseChecked } from "./filterspec"
 import { Header, Nav } from "./Layout"
-import * as store from "./store"
-import { AppStateContext, SetAppStateContext } from "./main"
+import { BringList, parseDatabaseChecked } from "./filterspec"
+import { RootState, setBLT, setHeader } from "./store"
 
 function CompileStatus(props: { compileResult: BringList | Error }) {
     if (props.compileResult instanceof Error) {
@@ -17,23 +16,22 @@ function CompileStatus(props: { compileResult: BringList | Error }) {
     }
 }
 
-
 function BringListEdit() {
-    const appStore = useContext(AppStateContext)
-    const SetAppStore = useContext(SetAppStateContext)
-    let parsedDatabase = parseDatabaseChecked(appStore?.bringListTemplate ?? "")
+    const blt = useSelector((state: RootState) => state.bringListTemplate)
+    const header = useSelector((state: RootState) => state.header)
+    const dispatch = useDispatch()
+    const parsedDatabase = parseDatabaseChecked(blt ?? "")
 
     return <div className="BringListEdit">
         <Header
-            header={appStore?.header ?? ""}
-            setHeader={(header) => { SetAppStore?.({ ...appStore!, header }) }}
+            header={header}
+            setHeader={(s) => dispatch(setHeader(s))}
         />
         <Nav />
         <CompileStatus compileResult={parsedDatabase} />
         <textarea
             className="BringListEdit-textarea"
-            onChange={(event => SetAppStore?.({ ...appStore!, bringListTemplate: event.target.value }))}
-            value={appStore?.bringListTemplate ?? ""}
+            onChange={(event) => dispatch(setBLT(event.target.value))}
         />
     </div>
 }

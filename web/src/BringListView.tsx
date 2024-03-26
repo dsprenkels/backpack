@@ -1,24 +1,24 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import './BringListView.css';
+import { Header, Nav } from './Layout';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
-import { Header, Nav } from './Layout';
-import * as store from './store';
-import { AppStateContext, SetAppStateContext } from './main';
+import { RootState, resetAll, setCheckedBLItem, setHeader, setNights, setStrikedBLItem, toggleTag } from './store';
 
 
 function TagList(
   props: {
     allTags: string[],
-    selectedTags: {[key: string]: true},
-    onSelectTag: (tag: string, enabled: boolean) => void,
+    selectedTags: { [key: string]: true },
+    toggleTag: (tag: string, enabled: boolean) => void,
   }) {
   let tagElems = props.allTags.map(
     (tagName) => <Tag
       key={tagName}
       name={tagName}
       selected={props.selectedTags[tagName]}
-      onSelectTag={props.onSelectTag} />
+      toggleTag={props.toggleTag} />
   )
   return <ul className="BringListView-tagList">
     {tagElems}
@@ -28,7 +28,7 @@ function TagList(
 function Tag(props: {
   name: string,
   selected: boolean,
-  onSelectTag: (tag: string, enabled: boolean) => void,
+  toggleTag: (tag: string, enabled: boolean) => void,
 }) {
   let classNames = ["BringListView-tag"]
   if (props.selected) {
@@ -36,7 +36,7 @@ function Tag(props: {
   }
   return <li
     className={classNames.join(' ')}
-    onClick={() => props.onSelectTag(props.name, !props.selected)}>
+    onClick={() => props.toggleTag(props.name, !props.selected)}>
     {props.name}
   </li>
 }
@@ -44,10 +44,10 @@ function Tag(props: {
 function BringList(props: {
   bringList: BL,
   filter: Filter,
-  checkedItems: {[key: string]: true},
-  updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: {[key: string]: true},
-  updateStrikedItems: (name: string, isStriked: boolean) => void,
+  checkedItems: { [key: string]: true },
+  setItemChecked: (name: string, checked: boolean) => void,
+  strikedItems: { [key: string]: true },
+  setItemStriked: (name: string, striked: boolean) => void,
 }) {
   let annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
     [cat, filterspec.exprIsMatch(props.filter, cat.tags)]
@@ -64,9 +64,9 @@ function BringList(props: {
           blcIsFalse={isFalse}
           filter={props.filter}
           checkedItems={props.checkedItems}
-          updateCheckedItems={props.updateCheckedItems}
+          setItemChecked={props.setItemChecked}
           strikedItems={props.strikedItems}
-          updateStrikedItems={props.updateStrikedItems}
+          setItemStriked={props.setItemStriked}
         />
       ))}
   </>
@@ -77,10 +77,10 @@ function BringListCategory(props: {
   blcIsTrue: string[],
   blcIsFalse: string[],
   filter: Filter,
-  checkedItems: {[key: string]: true},
-  updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: {[key: string]: true},
-  updateStrikedItems: (name: string, isStriked: boolean) => void,
+  checkedItems: { [key: string]: true },
+  setItemChecked: (name: string, checked: boolean) => void,
+  strikedItems: { [key: string]: true },
+  setItemStriked: (name: string, striked: boolean) => void,
 }) {
   let annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)]
@@ -103,10 +103,10 @@ function BringListCategory(props: {
           isTrue={isTrue}
           isFalse={isFalse}
           filter={props.filter}
-          isChecked={props.checkedItems[item.name]}
-          setIsChecked={(isChecked) => props.updateCheckedItems(item.name, isChecked)}
-          isStriked={props.strikedItems[item.name]}
-          setIsStriked={(isStriked) => props.updateStrikedItems(item.name, isStriked)}
+          isChecked={props.checkedItems[item.name] ?? false}
+          setChecked={(checked: boolean) => props.setItemChecked(item.name, checked)}
+          isStriked={props.strikedItems[item.name] ?? false}
+          setStriked={(striked: boolean) => props.setItemStriked(item.name, striked)}
         />)}
     </ul>
   </div>
@@ -118,9 +118,9 @@ function BringListItem(props: {
   isFalse: string[],
   filter: Filter,
   isChecked: boolean,
-  setIsChecked: (isChecked: boolean) => void,
+  setChecked: (checked: boolean) => void,
   isStriked: boolean,
-  setIsStriked: (isStriked: boolean) => void,
+  setStriked: (striked: boolean) => void,
 }) {
   let itemText = props.item.name
   let everyNNights = props.item.everyNNights
@@ -136,7 +136,7 @@ function BringListItem(props: {
   return <li className={liClassName}>
     <input className="BringListView-bringListItemCheckbox"
       type="checkbox"
-      onChange={(event) => props.setIsChecked(event.target.checked)}
+      onChange={(event) => props.setChecked(event.target.checked)}
       checked={props.isChecked}
       disabled={props.isStriked}
     />
@@ -144,7 +144,7 @@ function BringListItem(props: {
       {itemText}
     </span>
 
-    <span onClick={() => props.setIsStriked(!props.isStriked)}>
+    <span onClick={() => props.setStriked(!props.isStriked)}>
       <BootstrapCross className="BringListView-bootstrapCross" height={16} />
     </span>
     <BringListExplain isTrue={props.isTrue} isFalse={props.isFalse} />
@@ -193,8 +193,8 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
 
 function Settings(props: {
   bringList: filterspec.BringList,
-  tags: {[key: string]: true},
-  setTags: (tags: {[key: string]: true}) => void,
+  tags: { [key: string]: true },
+  toggleTag: (tag: string) => void,
   nights: number,
   setNights: (nights: number) => void,
   doResetAll: () => void,
@@ -243,15 +243,7 @@ function Settings(props: {
       <TagList
         allTags={tagList}
         selectedTags={props.tags}
-        onSelectTag={(tag: string, enabled: boolean) =>{
-          let tags = { ...props.tags }
-          if (enabled) {
-            tags[tag] = true
-          } else {
-            delete tags[tag]
-          }
-          props.setTags(tags)
-        }}
+        toggleTag={props.toggleTag}
       />
     </div>
     <div className="BringListView-nightsContainer BringListView-smallVerticalMargin">
@@ -272,54 +264,38 @@ function Settings(props: {
 }
 
 function BringListView() {
-  const appStore = useContext(AppStateContext)
-  const SetAppStore = useContext(SetAppStateContext)
+  const header = useSelector((state: RootState) => state.header)
+  const blt = useSelector((state: RootState) => state.bringListTemplate)
+  const bl = useMemo(() => filterspec.parseDatabase(blt), [blt])
+  const tags = useSelector((state: RootState) => state.tags)
+  const nights = useSelector((state: RootState) => state.nights)
+  const filter: Filter = { tags: new Set(Object.keys(tags)), nights: nights }
+  const checkedItems = useSelector((state: RootState) => state.checkedItems)
+  const strikedItems = useSelector((state: RootState) => state.strikedItems)
+  const dispatch = useDispatch()
 
-  let doResetAll = () => {
-    store.clearAllLocalStorage()
-    SetAppStore?.(store.loadStoreLocal())
-  }
-
-  const bringList = useMemo(() => filterspec.parseDatabase(appStore?.bringListTemplate ?? ""), [appStore?.bringListTemplate])
-  const filter: Filter = appStore ? { tags: new Set(Object.keys(appStore.tags)), nights: appStore.nights } : { tags: new Set(), nights: 0 }
   return (
     <div className="BringListView">
       <Header
-        header={appStore?.header ?? ""}
-        setHeader={(header) => SetAppStore!({ ...appStore!, header: header })}
+        header={header}
+        setHeader={(header) => dispatch(setHeader(header))}
       />
       <Nav />
       <Settings
-        bringList={bringList}
-        tags={appStore?.tags ?? {}}
-        setTags={(tags) => SetAppStore!({ ...appStore!, tags: tags })}
-        nights={appStore?.nights ?? 0}
-        setNights={(nights) => SetAppStore!({ ...appStore!, nights: nights })}
-        doResetAll={doResetAll}
+        bringList={bl}
+        tags={tags}
+        toggleTag={(tag) => dispatch(toggleTag(tag))}
+        nights={nights}
+        setNights={(n) => dispatch(setNights(n))}
+        doResetAll={() => dispatch(resetAll())}
       />
       <BringList
-        bringList={bringList}
+        bringList={bl}
         filter={filter}
-        checkedItems={appStore?.checkedItems ?? {}}
-        updateCheckedItems={(name: string, isChecked: boolean) => {
-          let checkedItems = { ...appStore!.checkedItems }
-          if (isChecked) {
-            checkedItems[name] = true
-          } else {
-            delete checkedItems[name]
-          }
-          SetAppStore!({ ...appStore!, checkedItems })
-        }}
-        strikedItems={appStore?.strikedItems ?? {}}
-        updateStrikedItems={(name: string, isStriked: boolean) => {
-          let strikedItems = { ...appStore!.strikedItems }
-          if (isStriked) {
-            strikedItems[name] = true
-          } else {
-            delete strikedItems[name]
-          }
-          SetAppStore!({ ...appStore!, strikedItems })
-        }}
+        checkedItems={checkedItems}
+        setItemChecked={(item, checked) => dispatch(setCheckedBLItem({ item, checked }))}
+        strikedItems={strikedItems}
+        setItemStriked={(item, striked) => dispatch(setStrikedBLItem({ item, striked }))}
       />
     </div>
   );
