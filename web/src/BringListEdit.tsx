@@ -1,8 +1,9 @@
 import { useDispatch, useSelector } from "react-redux"
 import "./BringListEdit.css"
-import { Header, Nav } from "./Layout"
+import { EditHeader, Nav } from "./Layout"
 import { BringList, parseDatabaseChecked } from "./filterspec"
-import { RootState, setBLT, setHeader } from "./store"
+import { AppState } from "./store"
+import { setBLT, setHeader } from "./bringlistSlice"
 
 function CompileStatus(props: { compileResult: BringList | Error }) {
     if (props.compileResult instanceof Error) {
@@ -17,13 +18,13 @@ function CompileStatus(props: { compileResult: BringList | Error }) {
 }
 
 function BringListEdit() {
-    const blt = useSelector((state: RootState) => state.bringListTemplate)
-    const header = useSelector((state: RootState) => state.header)
+    const blt = useSelector((state: AppState) => state.bringlist.bringListTemplate)
+    const header = useSelector((state: AppState) => state.bringlist.header)
     const dispatch = useDispatch()
     const parsedDatabase = parseDatabaseChecked(blt ?? "")
 
     return <div className="BringListEdit">
-        <Header
+        <EditHeader
             header={header}
             setHeader={(s) => dispatch(setHeader(s))}
         />

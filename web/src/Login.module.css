@@ -1,0 +1,30 @@
+.gitHubButtonContainer {
+    text-align: center;
+    width: 100%;
+}
+
+.gitHubButton {
+    display: block;
+    border: 1px solid #333;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 10px auto;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.anonymousButton {
+    display: block;
+    margin: 10px auto;
+    font-size: 16px;
+    border: none;
+    background-color: inherit;
+}
+
+.loginStatus {
+    margin: 2em auto;
+}

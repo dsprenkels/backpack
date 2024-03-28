@@ -114,7 +114,16 @@ AppDataSource.initialize().then(async () => {
     );
     app.get(`${rootURL.pathname}/auth/github`, passport.authenticate('github'));
 
-    // Handle userstore API
+    // User info API
+    app.get(`${rootURL.pathname}/api/user`, (req, res) => {
+        if (!req.isAuthenticated()) {
+            res.status(401).send('Unauthorized')
+            return
+        }
+        res.json(req.user)
+    })
+
+    // Userstore API
     app.get(`${rootURL.pathname}/api/userstore`, async (req, res) => {
         if (!req.isAuthenticated()) {
             res.status(401).send('Unauthorized')
