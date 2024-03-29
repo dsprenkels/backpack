@@ -12,17 +12,10 @@ import {
 import BringListEdit from './BringListEdit';
 import BringListView from './BringListView';
 import { ErrorPage } from './ErrorPage';
-import './index.css';
 import Login from './Login';
-import { UnknownAsyncThunkAction } from '@reduxjs/toolkit/dist/matchers';
-import { UnknownAction } from '@reduxjs/toolkit';
-import { fetchUser } from './userSlice';
+import './index.css';
 import { AppDispatch, AppState, store } from './store';
-
-const indexLoader: LoaderFunction = () => {
-  const user = useSelector((state: AppState) => state.user);
-  return user !== null ? redirect('/view') : redirect('/login');
-}
+import { fetchUser } from './userSlice';
 
 const routes: RouteObject[] = [
   { path: '/', element: <Index />, errorElement: <ErrorPage /> },

@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import "./BringListEdit.css"
+import styles from "./BringListEdit.module.css"
 import { EditHeader, Nav } from "./Layout"
 import { BringList, parseDatabaseChecked } from "./filterspec"
 import { AppState } from "./store"
@@ -7,11 +7,11 @@ import { setBLT, setHeader } from "./bringlistSlice"
 
 function CompileStatus(props: { compileResult: BringList | Error }) {
     if (props.compileResult instanceof Error) {
-        return <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
+        return <span className={`${styles.CompileStatus} ${styles.CompileErr}`}>
             compile error: {props.compileResult.message}
-        </span>
+        </span >
     } else {
-        return <span className="BringListEdit-CompileStatus BringListEdit-CompileOk">
+        return <span className={`${styles.CompileStatus} ${styles.CompileOk}`}>
             compilation succeeded
         </span>
     }
@@ -31,7 +31,7 @@ function BringListEdit() {
         <Nav />
         <CompileStatus compileResult={parsedDatabase} />
         <textarea
-            className="BringListEdit-textarea"
+            className={styles.textArea}
             onChange={(event) => dispatch(setBLT(event.target.value))}
         />
     </div>
