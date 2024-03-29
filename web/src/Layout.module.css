@@ -20,12 +20,38 @@
 }
 
 .navContainer {
-    display: block;
+    display: flex;
+    gap: 1em;
+    align-items: center;
     margin: 0.5em;
+    width: 100%;
+    justify-content: space-around;
 }
 
-.navContainer > a {
-    margin: 1em 0;
+.navItem {
+    display: flex;
+    align-items: center;
+    padding: auto;
+    height: 100%;
+}
+
+.navRight {
+    margin-left: auto;
+}
+
+.navUser {
+    text-decoration: underline;
+}
+.navUser:hover {
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.navUserAvatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin: 0 0.5em;
 }
 
 .navLinkActive {

@@ -17,6 +17,11 @@ import './index.css';
 import { AppDispatch, AppState, store } from './store';
 import { fetchUser } from './userSlice';
 
+// Current TODOs:
+//   * [x] Add user and login link to the navigator
+//   * [ ] Load the server state after logging in
+
+
 const routes: RouteObject[] = [
   { path: '/', element: <Index />, errorElement: <ErrorPage /> },
   { path: '/view', element: <BringListView /> },
@@ -54,6 +59,7 @@ function Index() {
       navigate('/view');
     }
   }, [user])
+
   return <></>
 }
 
