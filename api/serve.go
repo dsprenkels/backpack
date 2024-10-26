@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strings"
 	"time"
 
@@ -81,19 +79,6 @@ func setupRouter() *gin.Engine {
 	router.GET(rootPath+"/api/user", getUser)
 	router.GET(rootPath+"/api/userstore", getUserStore)
 	router.PUT(rootPath+"/api/userstore", updateUserStore)
-
-	// If development, then proxy requests to vite
-	// TODO: Take this out of the main application and make a separate
-	// reverse proxy for debugging.
-	if gin.IsDebugging() {
-		vite, err := url.Parse("http://localhost:3001")
-		if err != nil {
-			glog.Fatal(err)
-		}
-		proxy := httputil.NewSingleHostReverseProxy(vite)
-		router.Use(gin.WrapF(proxy.ServeHTTP))
-	}
-
 	return router
 }
 
