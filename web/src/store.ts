@@ -1,3 +1,4 @@
+import { BringList, parseDatabase } from "./filterspec"
 import DEFAULT_BRINGLIST_TEMPLATE from "./template"
 
 const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
@@ -7,44 +8,119 @@ const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
 const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
 const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
 const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
-const LOCALSTORAGE_REVISION = `${LOCALSTORAGE_PREFIX}revision`
 
-export interface Store {
-    bringListTemplate: string,
-    tags: Set<string>,
-    checkedItems: Set<string>,
-    strikedItems: Set<string>,
-    nights: number,
-    header: string,
-    revision: number,
+function handleInvalidFormat(key: string, expectedType: string, json: any) {
+    console.error(`localStorage has invalid '${key}' ${expectedType}, deleting entry and backing up to '${key}~': ${json}`)
+    localStorage.setItem(`${key}~`, json)
+    localStorage.removeItem(key)
 }
 
-export function loadStore(): Store {
-    return {
-        bringListTemplate: loadValue(LOCALSTORAGE_TEMPLATE, String),
-        tags: loadValue(LOCALSTORAGE_TAGS, decodeStringSet),
-        checkedItems: loadValue(LOCALSTORAGE_CHECKED, decodeStringSet),
-        strikedItems: loadValue(LOCALSTORAGE_STRIKED, decodeStringSet),
-        nights: loadValue(LOCALSTORAGE_NIGHTS, Number),
-        header: loadValue(LOCALSTORAGE_HEADER, String),
-        revision: loadValue(LOCALSTORAGE_REVISION, Number),
+function loadStringSet(key: string): Set<string> {
+    let empty = new Set<string>()
+    let json = localStorage.getItem(key)
+    if (json === null) {
+        return empty
     }
+    let tagsArray = JSON.parse(json)
+    if (!(tagsArray instanceof Array)) {
+        handleInvalidFormat(key, 'array', json)
+        return empty
+    }
+    return new Set<string>(tagsArray)
 }
 
-export function saveStore(store: Store) {
-    saveValue(LOCALSTORAGE_TEMPLATE, store.bringListTemplate)
-    saveValueTransform(LOCALSTORAGE_TAGS, store.tags, encodeStringSet)
-    saveValueTransform(LOCALSTORAGE_CHECKED, store.checkedItems, encodeStringSet)
-    saveValueTransform(LOCALSTORAGE_STRIKED, store.strikedItems, encodeStringSet)
-    saveValue(LOCALSTORAGE_NIGHTS, store.nights)
-    saveValue(LOCALSTORAGE_HEADER, store.header)
-    saveValue(LOCALSTORAGE_REVISION, store.revision)
+function saveStringSet(key: string, set: Set<string>) {
+    let array = Array.from(set)
+    let json = JSON.stringify(array)
+    localStorage.setItem(key, json)
 }
 
-export function updateStore(store: Store, f: (store: Store) => Store): Store {
-    let updatedStore = f(structuredClone(store))
-    saveStore(updatedStore)
-    return updatedStore
+export function loadTemplateOrDefault(): string {
+    let template = loadTemplate()
+    if (template === '') {
+        return DEFAULT_BRINGLIST_TEMPLATE
+    }
+    return template
+}
+
+export function loadTemplate(): string {
+    let json = localStorage.getItem(LOCALSTORAGE_TEMPLATE)
+    if (json === null) {
+        return ""
+    }
+    let templateString = JSON.parse(json)
+    if (typeof templateString !== "string") {
+        handleInvalidFormat(LOCALSTORAGE_TEMPLATE, 'string', json)
+        return ""
+    }
+    return templateString
+}
+
+export function saveTemplate(template: string) {
+    let json = JSON.stringify(template)
+    localStorage.setItem(LOCALSTORAGE_TEMPLATE, json)
+}
+
+export function loadTags(): Set<string> {
+    return loadStringSet(LOCALSTORAGE_TAGS)
+}
+
+export function saveTags(tags: Set<string>) {
+    return saveStringSet(LOCALSTORAGE_TAGS, tags)
+}
+
+export function loadCheckedItems(): Set<string> {
+    return loadStringSet(LOCALSTORAGE_CHECKED)
+}
+
+export function saveCheckedItems(strikedItems: Set<string>) {
+    return saveStringSet(LOCALSTORAGE_CHECKED, strikedItems)
+}
+
+export function loadStrikedItems(): Set<string> {
+    return loadStringSet(LOCALSTORAGE_STRIKED)
+}
+
+export function saveStrikedItems(strikedItems: Set<string>) {
+    return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
+}
+
+export function loadNights(): number {
+    let defaultNights = 3
+    let json = localStorage.getItem(LOCALSTORAGE_NIGHTS)
+    if (json === null) {
+        return defaultNights
+    }
+    let nights = JSON.parse(json)
+    if (typeof nights !== "number") {
+        handleInvalidFormat(LOCALSTORAGE_NIGHTS, 'number', json)
+        return defaultNights
+    }
+    return nights
+}
+
+export function saveNights(nights: number) {
+    let json = JSON.stringify(nights)
+    localStorage.setItem(LOCALSTORAGE_NIGHTS, json)
+}
+
+export function loadHeader(): string {
+    let defaultHeader = ""
+    let json = localStorage.getItem(LOCALSTORAGE_HEADER)
+    if (json === null) {
+        return defaultHeader
+    }
+    let header = JSON.parse(json)
+    if (typeof header !== "string") {
+        handleInvalidFormat(LOCALSTORAGE_HEADER, 'string', json)
+        return header
+    }
+    return header
+}
+
+export function saveHeader(header: string) {
+    let json = JSON.stringify(header)
+    localStorage.setItem(LOCALSTORAGE_HEADER, json)
 }
 
 export function clearAllLocalStorage() {
@@ -58,37 +134,4 @@ export function clearAllLocalStorage() {
     for (let key of keys) {
         localStorage.removeItem(key)
     }
-}
-
-function decodeStringSet(json?: any): Set<string> {
-    return new Set<string>(json)
-}
-
-function encodeStringSet(set: Set<string>): Array<string> {
-    return Array.from(set)
-}
-
-function loadValue<T>(key: string, constructor: (json?: any) => T): T {
-    let json = localStorage.getItem(key)
-    if (json === null) {
-        return constructor()
-    }
-    let value
-    try {
-        value = constructor(JSON.parse(json))
-    } catch (e) {
-        console.error(`decoding localStorage '${key}' failed (error: ${e}), deleting entry and backing up to '${key}~': ${json}`)
-        localStorage.setItem(`${key}~`, json)
-        localStorage.removeItem(key)
-        return constructor()
-    }
-    return value
-}
-
-function saveValue<T>(key: string, value: T) {
-    saveValueTransform(key, value, x => x)
-}
-
-function saveValueTransform<T, U>(key: string, value: T, transform: (x: T) => U) {
-    localStorage.setItem(key, JSON.stringify(transform(value)))
 }

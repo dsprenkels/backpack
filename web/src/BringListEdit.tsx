@@ -1,9 +1,8 @@
-import { useContext, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import "./BringListEdit.css"
 import { BringList, parseDatabaseChecked } from "./filterspec"
 import { Header, Nav } from "./Layout"
 import * as store from "./store"
-import { AppStateContext, SetAppStateContext } from "./main"
 
 function CompileStatus(props: { compileResult: BringList | Error }) {
     if (props.compileResult instanceof Error) {
@@ -19,21 +18,27 @@ function CompileStatus(props: { compileResult: BringList | Error }) {
 
 
 function BringListEdit() {
-    const appStore = useContext(AppStateContext)
-    const SetAppStore = useContext(SetAppStateContext)
-    let parsedDatabase = parseDatabaseChecked(appStore?.bringListTemplate ?? "")
+    const [header, setHeader] = useState(store.loadHeader)
+    useEffect(() => store.saveHeader(header), [header])
+
+    let [bringListTemplate, setBringListTemplate] = useState(store.loadTemplateOrDefault)
+    let parsedDatabase = parseDatabaseChecked(bringListTemplate)
+    useEffect(() => {
+        if (parsedDatabase instanceof Error) { return }
+        store.saveTemplate(bringListTemplate)
+    }, [parsedDatabase])
 
     return <div className="BringListEdit">
         <Header
-            header={appStore?.header ?? ""}
-            setHeader={(header) => { SetAppStore?.({ ...appStore!, header }) }}
+            header={header}
+            setHeader={setHeader}
         />
         <Nav />
         <CompileStatus compileResult={parsedDatabase} />
         <textarea
             className="BringListEdit-textarea"
-            onChange={(event => SetAppStore?.({ ...appStore!, bringListTemplate: event.target.value }))}
-            value={appStore?.bringListTemplate ?? ""}
+            onChange={(event => setBringListTemplate(event.target.value))}
+            value={bringListTemplate}
         />
     </div>
 }
