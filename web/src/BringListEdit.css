@@ -1,0 +1,16 @@
+.BringListEdit-textarea {
+    width: 100%;
+    min-height: 50em;
+}
+
+.BringListEdit-CompileStatus {
+    font-weight: 600;
+}
+
+.BringListEdit-CompileOk {
+    color: green;
+}
+
+.BringListEdit-CompileErr {
+    color: red;
+}

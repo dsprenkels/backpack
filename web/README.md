@@ -23,6 +23,14 @@ npm run test
 npm run build
 ```
 
+## Roadmap
+
+- [x] PoC
+- [x] Store the state in the broswer `LocalStorage`
+- [ ] Allow the user to modify the packing list template
+- [ ] Store the state on a server, provided by some auth
+- [ ] Support GitHub OAuth
+
 ## Questions
 
 You can send bug reports, general questions, and feature requests to my
