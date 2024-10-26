@@ -1,17 +1,14 @@
 import DEFAULT_BRINGLIST_TEMPLATE from "./template"
 
 const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
-const LOCALSTORAGE_STORE = `${LOCALSTORAGE_PREFIX}store`
-const DEFAULT_STORE = {
-    bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
-    tags: new Set<string>(),
-    checkedItems: new Set<string>(),
-    strikedItems: new Set<string>(),
-    nights: 0,
-    header: "",
-    revision: 0,
-    updatedAt: undefined,
-}
+const LOCALSTORAGE_TEMPLATE = `${LOCALSTORAGE_PREFIX}template`
+const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
+const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
+const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
+const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
+const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
+const LOCALSTORAGE_REVISION = `${LOCALSTORAGE_PREFIX}revision`
+const LOCALSTORAGE_UPDATED_AT = `${LOCALSTORAGE_PREFIX}updated_at`
 
 export interface Store {
     bringListTemplate: string,
@@ -24,114 +21,47 @@ export interface Store {
     updatedAt?: Date,
 }
 
-export interface SerializableStore {
-    bringListTemplate: string,
-    tags: Array<string>,
-    checkedItems: Array<string>,
-    strikedItems: Array<string>,
-    nights: number,
-    header: string,
-    revision: number,
-    updatedAt?: string,
-}
-
-export function toSerializable(store: Store): SerializableStore {
+export function loadStore(): Store {
     return {
-        bringListTemplate: store.bringListTemplate,
-        tags: Array.from(store.tags),
-        checkedItems: Array.from(store.checkedItems),
-        strikedItems: Array.from(store.strikedItems),
-        nights: store.nights,
-        header: store.header,
-        revision: store.revision,
-        updatedAt: store.updatedAt?.toISOString(),
+        bringListTemplate: loadValue(LOCALSTORAGE_TEMPLATE, String),
+        tags: loadValue(LOCALSTORAGE_TAGS, decodeStringSet),
+        checkedItems: loadValue(LOCALSTORAGE_CHECKED, decodeStringSet),
+        strikedItems: loadValue(LOCALSTORAGE_STRIKED, decodeStringSet),
+        nights: loadValue(LOCALSTORAGE_NIGHTS, Number),
+        header: loadValue(LOCALSTORAGE_HEADER, String),
+        revision: loadValue(LOCALSTORAGE_REVISION, Number),
+        updatedAt: loadValue(LOCALSTORAGE_UPDATED_AT, (s?: string) => new Date(s ?? 0)),
     }
-}
-
-export function fromSerializable(store: SerializableStore): Store {
-    return {
-        bringListTemplate: store.bringListTemplate,
-        tags: new Set(store.tags),
-        checkedItems: new Set(store.checkedItems),
-        strikedItems: new Set(store.strikedItems),
-        nights: store.nights,
-        header: store.header,
-        revision: store.revision,
-        updatedAt: new Date(store.updatedAt ?? 0),
-    }
-
-}
-
-export async function loadStore(): Promise<Store> {
-    let remoteStore = await loadStoreFromServer()
-    let localStore = loadStoreLocal()
-    if (remoteStore.revision > localStore.revision) {
-        console.info("remote store is newer, overwriting local store")
-        saveStoreLocal(remoteStore)
-        return fromSerializable(remoteStore)
-    }
-    return fromSerializable(localStore)
-}
-
-export function loadStoreLocal(): SerializableStore {
-    return loadValue(LOCALSTORAGE_STORE, (json?: any) => json ?? DEFAULT_STORE)
 }
 
 export function saveStore(store: Store) {
-    let serializableStore = toSerializable(store)
-    serializableStore.revision++
-    saveStoreLocal(serializableStore)
-    saveStoreOnServer(serializableStore)
+    saveValue(LOCALSTORAGE_TEMPLATE, store.bringListTemplate)
+    saveValueTransform(LOCALSTORAGE_TAGS, store.tags, encodeStringSet)
+    saveValueTransform(LOCALSTORAGE_CHECKED, store.checkedItems, encodeStringSet)
+    saveValueTransform(LOCALSTORAGE_STRIKED, store.strikedItems, encodeStringSet)
+    saveValue(LOCALSTORAGE_NIGHTS, store.nights)
+    saveValue(LOCALSTORAGE_HEADER, store.header)
+    saveValue(LOCALSTORAGE_REVISION, store.revision)
+    saveValueTransform(LOCALSTORAGE_UPDATED_AT, store.updatedAt, (d?: Date) => d?.toISOString())
 }
 
-export function saveStoreLocal(store: SerializableStore) {
-    saveValue(LOCALSTORAGE_STORE, store)
-}
-
-export async function saveStoreOnServer(store: SerializableStore) {
-    console.debug("saving store on server", store)
-    let controller = new AbortController()
-    let timeoutID = setTimeout(() => {
-        console.warn("timeout saving store on server")
-        controller.abort()
-    }, 1000)
-    let response = await fetch("http://localhost:8080/backpack/api/userstore", {
-        method: "PUT",
-        body: JSON.stringify({ store: JSON.stringify(store) }),
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        signal: controller.signal,
-    })
-    if (!response.ok) {
-        console.error("error saving store on server", response)
-    } else {
-        console.debug("saved store on server", response)
-    }
-    clearTimeout(timeoutID)
-}
-
-export async function loadStoreFromServer(): Promise<SerializableStore> {
-    let controller = new AbortController()
-    let timeoutID = setTimeout(() => {
-        console.warn("timeout loading store from server")
-        controller.abort()
-    }, 1000)
-    let response = await fetch("http://localhost:8080/backpack/api/userstore", {
-        method: "GET",
-        credentials: "include",
-        signal: controller.signal,
-    })
-    if (!response.ok) {
-        let err = new Error("error loading store from server")
-        console.error(err, response)
-        throw err
-    }
-    clearTimeout(timeoutID)
-    return await response.json() as SerializableStore
+export function updateStore(store: Store, f: (store: Store) => Store): Store {
+    let updatedStore = f(structuredClone(store))
+    saveStore(updatedStore)
+    return updatedStore
 }
 
 export function clearAllLocalStorage() {
-    localStorage.removeItem(LOCALSTORAGE_STORE)
+    let keys = [
+        LOCALSTORAGE_TAGS,
+        LOCALSTORAGE_CHECKED,
+        LOCALSTORAGE_STRIKED,
+        LOCALSTORAGE_NIGHTS,
+        LOCALSTORAGE_HEADER,
+    ]
+    for (let key of keys) {
+        localStorage.removeItem(key)
+    }
 }
 
 function decodeStringSet(json?: any): Set<string> {

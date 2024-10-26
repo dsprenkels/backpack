@@ -270,10 +270,10 @@ function BringListView() {
 
   let doResetAll = () => {
     store.clearAllLocalStorage()
-    SetAppStore?.(store.fromSerializable(store.loadStoreLocal()))
+    SetAppStore?.(store.loadStore())
   }
 
-  const bringList = useMemo(() => filterspec.parseDatabase(appStore?.bringListTemplate ?? ""), [appStore?.bringListTemplate])
+  const bringList = useMemo(() => filterspec.parseDatabase(appStore?.bringListTemplate ?? ""), [])
   const filter = { tags: appStore?.tags ?? new Set(), nights: appStore?.nights ?? 0 }
   return (
     <div className="BringListView">

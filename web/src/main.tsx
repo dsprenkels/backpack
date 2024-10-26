@@ -1,4 +1,4 @@
-import React, { Context, Dispatch, SetStateAction, useCallback, useEffect, useState } from 'react';
+import React, { Context, Dispatch, SetStateAction, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   createBrowserRouter, RouteObject,
@@ -30,34 +30,25 @@ const root = ReactDOM.createRoot(
 );
 
 function App() {
-  const [userStore, setUserStore] = useState<Store | null>(null)
-  useEffect(() => {
-    loadStore().then(store => {
-      if (store.revision === 0) {
-        // This is the first version
-        store.bringListTemplate = DEFAULT_BRINGLIST_TEMPLATE
-        // Set default nights to 3
-        store.nights = 3
-      }
-      console.debug('Loaded store', store)
-      setUserStore(store)
-    })
-  }, [])
-  useEffect(() => {
-    if (userStore !== null) {
-      saveStore(userStore)
+  const [appStore, setAppStore] = useState<Store>(() => {
+    let store = loadStore()
+    if (store.revision == 0) {
+      // This is the first version
+      store.bringListTemplate = DEFAULT_BRINGLIST_TEMPLATE
+      // Set default nights to 3
+      store.nights = 3
     }
-  }, [userStore])
-
-  console.debug("Current store:", userStore)
+    return store
+  })
+  useEffect(() => saveStore(appStore), [appStore])
 
   return <React.StrictMode>
-    <AppStateContext.Provider value={userStore}>
+    <AppStateContext.Provider value={appStore}>
       <SetAppStateContext.Provider value={(store) => {
         store = structuredClone(store)
         store.revision++
         store.updatedAt = new Date()
-        setUserStore(store)
+        setAppStore(store)
       }}>
         <RouterProvider router={router} />
       </SetAppStateContext.Provider>
