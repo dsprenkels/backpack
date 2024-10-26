@@ -2,7 +2,6 @@ package backpack
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/glog"
-	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	ginglog "github.com/szuecs/gin-glog"
 	"golang.org/x/oauth2"
@@ -28,10 +26,9 @@ var (
 	sessionSecret                       = os.Getenv("BACKPACK_SESSION_SECRET")
 	github_client_id                    = os.Getenv("BACKPACK_GITHUB_CLIENT_ID")
 	github_client_secret                = os.Getenv("BACKPACK_GITHUB_CLIENT_SECRET")
-	rootURL                             = strings.TrimSuffix(os.Getenv("BACKPACK_ROOT_URL"), "/")
-	rootPath                            = urlParseMust(rootURL).Path
+	rootURL                             = os.Getenv("BACKPACK_ROOT_URL")
 	oauthConfig          *oauth2.Config = &oauth2.Config{
-		RedirectURL:  rootURL + "/auth/github/callback",
+		RedirectURL:  strings.TrimSuffix(rootURL, "/") + "/auth/github/callback",
 		ClientID:     github_client_id,
 		ClientSecret: github_client_secret,
 		Scopes:       []string{"read:user"},
@@ -76,12 +73,11 @@ func setupRouter() *gin.Engine {
 	store := cookie.NewStore([]byte(sessionSecret))
 	router.Use(sessions.Sessions("backpack_session", store))
 
-	router.GET(rootPath+"/auth/login", login)
-	router.GET(rootPath+"/auth/github/callback", oauthCallback)
+	router.GET("/backpack/auth/login", login)
+	router.GET("/backpack/auth/github/callback", oauthCallback)
 
-	router.GET(rootPath+"/api/user", getUser)
-	router.GET(rootPath+"/api/userstore", getUserStore)
-	router.PUT(rootPath+"/api/userstore", updateUserStore)
+	router.GET("/backpack/api/userstore", getUserStore)
+	router.PUT("/backpack/api/userstore", updateUserStore)
 	return router
 }
 
@@ -108,150 +104,50 @@ func oauthCallback(c *gin.Context) {
 		return
 	}
 
-	// Request the github user id and couple this oauth identity to that user id
-	req, err := http.NewRequest("GET", "https://api.github.com/user", nil)
-	if err != nil {
-		err = errors.Wrap(err, "new request")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token.AccessToken))
-	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		err = errors.Wrap(err, "do request")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("github api returned %d", resp.StatusCode)
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	var githubUser struct {
-		ID          int    `json:"id"`
-		Login       string `json:"login"`
-		DisplayName string `json:"name"`
-		AvatarURL   string `json:"avatar_url"`
-	}
-	err = json.NewDecoder(resp.Body).Decode(&githubUser)
-	if err != nil {
-		err = errors.Wrap(err, "decode json")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-
-	tx, err := db.Begin(context.Background())
-	if err != nil {
-		err = errors.Wrap(err, "database begin")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	defer tx.Rollback(context.Background())
 	sql := `
-INSERT INTO "users" ("github_id", "github_login", "displayname", "avatar_url")
-VALUES($1, $2, $3, $4) ON CONFLICT ("github_id") DO UPDATE SET "github_login" = $2, "displayname" = $3, "avatar_url" = $4 RETURNING "id"
-`
-	row := tx.QueryRow(context.Background(), sql, githubUser.ID, githubUser.Login, githubUser.DisplayName, githubUser.AvatarURL)
-	var userID int
-	err = row.Scan(&userID)
-	if err != nil {
-		err = errors.Wrapf(err, "insert into users")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-		return
-	}
-	glog.Infof("registered new user with id %d", userID)
-	sql = `
-INSERT INTO "oauth_identities" ("user_id", "provider", "token_type", "access_token", "scope")
-VALUES($1, $2, $3, $4, $5)
+INSERT INTO "oauth_identities" ("provider", "token_type", "access_token", "scope")
+VALUES($1, $2, $3, $4)
 RETURNING "id"
 `
-	row = tx.QueryRow(context.Background(), sql,
-		userID,
+	row := db.QueryRow(context.Background(), sql,
 		"github",
 		token.TokenType,
 		token.AccessToken,
 		strings.Join(oauthConfig.Scopes, ","),
 	)
-	var oauthID int
-	err = row.Scan(&oauthID)
+	var id int
+	err = row.Scan(&id)
 	if err != nil {
 		err = errors.Wrapf(err, "oauth insert into db")
 		glog.Error(err)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	glog.Infof("registered new oauth identity with id %d", oauthID)
+	glog.Infof("registered new oauth identity with id %d", id)
+	session.Set("oauth_id", id)
+	session.Save()
 	if err = session.Save(); err != nil {
 		err = errors.Wrap(err, "session save")
 		glog.Error(err)
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
-	tx.Commit(context.Background())
-
-	// Update session
-	session.Set("user_id", userID)
-	session.Set("oauth_id", oauthID)
-	if err = session.Save(); err != nil {
-		err = errors.Wrap(err, "session save")
-		glog.Error(err)
-		c.AbortWithError(http.StatusInternalServerError, err)
-	}
-
-	c.Redirect(http.StatusTemporaryRedirect, rootURL)
-}
-
-func getUser(c *gin.Context) {
-	session := sessions.Default(c)
-	user_id := session.Get("user_id")
-	if user_id == nil {
-		c.AbortWithError(http.StatusUnauthorized, errors.New("no user_id in session"))
-		return
-	}
-	sql := `SELECT "id", "github_login", "displayname", "avatar_url" FROM "users" WHERE "id" = $1 LIMIT 1;`
-	row := db.QueryRow(context.Background(), sql, user_id)
-	var user struct {
-		ID          int    `json:"id"`
-		GitHubLogin string `json:"github_login"`
-		DisplayName string `json:"displayname"`
-		AvatarURL   string `json:"avatar_url"`
-	}
-	err := row.Scan(&user.ID, &user.GitHubLogin, &user.DisplayName, &user.AvatarURL)
-	if errors.Is(err, pgx.ErrNoRows) {
-		c.AbortWithError(http.StatusNotFound, errors.New("no user found"))
-		return
-	} else if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database select"))
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"ok": true, "user": user})
+	c.JSON(http.StatusOK, gin.H{"ok": true, "oauth_id": id})
 }
 
 func getUserStore(c *gin.Context) {
 	session := sessions.Default(c)
-	user_id := session.Get("user_id")
+	oauth_id := session.Get("oauth_id")
 
-	if user_id == nil {
-		c.AbortWithError(http.StatusUnauthorized, errors.New("no user_id in session"))
+	if oauth_id == nil {
+		c.AbortWithError(http.StatusUnauthorized, errors.New("no oauth_id in session"))
 		return
 	}
 
-	stmt := `SELECT "store" FROM "user_stores" WHERE "user_id" = $1 LIMIT 1;`
-	row := db.QueryRow(context.Background(), stmt, user_id)
+	stmt := `SELECT "store" FROM "user_stores" WHERE "identity_id" = $1 LIMIT 1;`
+	row := db.QueryRow(context.Background(), stmt, oauth_id)
 	var store string
 	err := row.Scan(&store)
-	if errors.Is(err, pgx.ErrNoRows) {
-		c.AbortWithError(http.StatusNotFound, errors.New("no store found"))
-		return
-	} else if err != nil {
+	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database select"))
 		return
 	}
@@ -260,9 +156,9 @@ func getUserStore(c *gin.Context) {
 
 func updateUserStore(c *gin.Context) {
 	session := sessions.Default(c)
-	user_id := session.Get("user_id")
-	if user_id == nil {
-		c.AbortWithError(http.StatusUnauthorized, errors.New("no user_id in session"))
+	oauth_id := session.Get("oauth_id")
+	if oauth_id == nil {
+		c.AbortWithError(http.StatusUnauthorized, errors.New("no oauth_id in session"))
 		return
 	}
 
@@ -286,14 +182,14 @@ func updateUserStore(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback(context.Background())
-	stmt = `DELETE FROM "user_stores" WHERE "user_id" = $1`
-	_, err = tx.Exec(context.Background(), stmt, user_id)
+	stmt = `DELETE FROM "user_stores" WHERE "identity_id" = $1`
+	_, err = tx.Exec(context.Background(), stmt, oauth_id)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database delete"))
 		return
 	}
-	stmt = `INSERT INTO "user_stores" ("user_id", "store") VALUES ($1, $2)`
-	_, err = tx.Exec(context.Background(), stmt, user_id, req.Store)
+	stmt = `INSERT INTO "user_stores" ("identity_id", "store") VALUES ($1, $2)`
+	_, err = tx.Exec(context.Background(), stmt, oauth_id, req.Store)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database insert"))
 		return
