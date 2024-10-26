@@ -8,7 +8,6 @@ const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
 const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
 const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
 const LOCALSTORAGE_REVISION = `${LOCALSTORAGE_PREFIX}revision`
-const LOCALSTORAGE_UPDATED_AT = `${LOCALSTORAGE_PREFIX}updated_at`
 
 export interface Store {
     bringListTemplate: string,
@@ -18,7 +17,6 @@ export interface Store {
     nights: number,
     header: string,
     revision: number,
-    updatedAt?: Date,
 }
 
 export function loadStore(): Store {
@@ -30,7 +28,6 @@ export function loadStore(): Store {
         nights: loadValue(LOCALSTORAGE_NIGHTS, Number),
         header: loadValue(LOCALSTORAGE_HEADER, String),
         revision: loadValue(LOCALSTORAGE_REVISION, Number),
-        updatedAt: loadValue(LOCALSTORAGE_UPDATED_AT, (s?: string) => new Date(s ?? 0)),
     }
 }
 
@@ -42,7 +39,6 @@ export function saveStore(store: Store) {
     saveValue(LOCALSTORAGE_NIGHTS, store.nights)
     saveValue(LOCALSTORAGE_HEADER, store.header)
     saveValue(LOCALSTORAGE_REVISION, store.revision)
-    saveValueTransform(LOCALSTORAGE_UPDATED_AT, store.updatedAt, (d?: Date) => d?.toISOString())
 }
 
 export function updateStore(store: Store, f: (store: Store) => Store): Store {
