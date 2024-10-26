@@ -10,14 +10,14 @@ import { AppStateContext, SetAppStateContext } from './main';
 function TagList(
   props: {
     allTags: string[],
-    selectedTags: {[key: string]: true},
+    selectedTags: Set<string>,
     onSelectTag: (tag: string, enabled: boolean) => void,
   }) {
   let tagElems = props.allTags.map(
     (tagName) => <Tag
       key={tagName}
       name={tagName}
-      selected={props.selectedTags[tagName]}
+      selected={props.selectedTags.has(tagName)}
       onSelectTag={props.onSelectTag} />
   )
   return <ul className="BringListView-tagList">
@@ -44,9 +44,9 @@ function Tag(props: {
 function BringList(props: {
   bringList: BL,
   filter: Filter,
-  checkedItems: {[key: string]: true},
+  checkedItems: Set<string>,
   updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: {[key: string]: true},
+  strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   let annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
@@ -77,9 +77,9 @@ function BringListCategory(props: {
   blcIsTrue: string[],
   blcIsFalse: string[],
   filter: Filter,
-  checkedItems: {[key: string]: true},
+  checkedItems: Set<string>,
   updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: {[key: string]: true},
+  strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   let annotate = (item: Item): [Item, ExprIsMatchResult] =>
@@ -103,9 +103,9 @@ function BringListCategory(props: {
           isTrue={isTrue}
           isFalse={isFalse}
           filter={props.filter}
-          isChecked={props.checkedItems[item.name]}
+          isChecked={props.checkedItems.has(item.name)}
           setIsChecked={(isChecked) => props.updateCheckedItems(item.name, isChecked)}
-          isStriked={props.strikedItems[item.name]}
+          isStriked={props.strikedItems.has(item.name)}
           setIsStriked={(isStriked) => props.updateStrikedItems(item.name, isStriked)}
         />)}
     </ul>
@@ -193,8 +193,8 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
 
 function Settings(props: {
   bringList: filterspec.BringList,
-  tags: {[key: string]: true},
-  setTags: (tags: {[key: string]: true}) => void,
+  tags: Set<string>,
+  setTags: (tags: Set<string>) => void,
   nights: number,
   setNights: (nights: number) => void,
   doResetAll: () => void,
@@ -204,7 +204,7 @@ function Settings(props: {
   const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
   const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(props.bringList)), [props.bringList])
 
-  let noneSelectedElement = Object.keys(props.tags).length === 0 ?
+  let noneSelectedElement = props.tags.size === 0 ?
     <div className="BringListView-tagListNoneSelected">no tags selected</div> : <></>
 
   let resetButton;
@@ -243,15 +243,8 @@ function Settings(props: {
       <TagList
         allTags={tagList}
         selectedTags={props.tags}
-        onSelectTag={(tag: string, enabled: boolean) =>{
-          let tags = { ...props.tags }
-          if (enabled) {
-            tags[tag] = true
-          } else {
-            delete tags[tag]
-          }
-          props.setTags(tags)
-        }}
+        onSelectTag={(tag: string, enabled: boolean) =>
+          props.setTags(setAssign(props.tags, tag, enabled))}
       />
     </div>
     <div className="BringListView-nightsContainer BringListView-smallVerticalMargin">
@@ -277,11 +270,11 @@ function BringListView() {
 
   let doResetAll = () => {
     store.clearAllLocalStorage()
-    SetAppStore?.(store.loadStoreLocal())
+    SetAppStore?.(store.fromSerializable(store.loadStoreLocal()))
   }
 
   const bringList = useMemo(() => filterspec.parseDatabase(appStore?.bringListTemplate ?? ""), [appStore?.bringListTemplate])
-  const filter: Filter = appStore ? { tags: new Set(Object.keys(appStore.tags)), nights: appStore.nights } : { tags: new Set(), nights: 0 }
+  const filter = { tags: appStore?.tags ?? new Set(), nights: appStore?.nights ?? 0 }
   return (
     <div className="BringListView">
       <Header
@@ -291,7 +284,7 @@ function BringListView() {
       <Nav />
       <Settings
         bringList={bringList}
-        tags={appStore?.tags ?? {}}
+        tags={appStore?.tags ?? new Set()}
         setTags={(tags) => SetAppStore!({ ...appStore!, tags: tags })}
         nights={appStore?.nights ?? 0}
         setNights={(nights) => SetAppStore!({ ...appStore!, nights: nights })}
@@ -300,29 +293,27 @@ function BringListView() {
       <BringList
         bringList={bringList}
         filter={filter}
-        checkedItems={appStore?.checkedItems ?? {}}
+        checkedItems={appStore?.checkedItems ?? new Set()}
         updateCheckedItems={(name: string, isChecked: boolean) => {
-          let checkedItems = { ...appStore!.checkedItems }
-          if (isChecked) {
-            checkedItems[name] = true
-          } else {
-            delete checkedItems[name]
-          }
-          SetAppStore!({ ...appStore!, checkedItems })
+          SetAppStore!({ ...appStore!, checkedItems: setAssign(appStore!.checkedItems, name, isChecked) })
         }}
-        strikedItems={appStore?.strikedItems ?? {}}
+        strikedItems={appStore?.strikedItems ?? new Set()}
         updateStrikedItems={(name: string, isStriked: boolean) => {
-          let strikedItems = { ...appStore!.strikedItems }
-          if (isStriked) {
-            strikedItems[name] = true
-          } else {
-            delete strikedItems[name]
-          }
-          SetAppStore!({ ...appStore!, strikedItems })
+          SetAppStore!({ ...appStore!, strikedItems: setAssign(appStore!.strikedItems, name, isStriked) })
         }}
       />
     </div>
   );
+}
+
+function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
+  let set = new Set(_set)
+  if (enabled) {
+    set.add(key)
+  } else {
+    set.delete(key)
+  }
+  return set
 }
 
 export default BringListView;
