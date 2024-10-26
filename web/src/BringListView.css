@@ -1,23 +1,44 @@
-.link {
+.BringListView-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.BringListView-headerInput {
+  font-weight: bold;
+  text-align: center;
+  font-size: 1.8em;
+  border-width: 1px;
+  border-color: rgba(127, 127, 127, 0);
+  margin: 0.5em;
+  font-family: inherit;
+}
+
+.BringListView-headerInputEmpty {
+  border-color: rgba(127, 127, 127, 255);
+}
+
+.BringListView-link {
   color: #61dafb;
 }
 
-.noVerticalMargin {
+.BringListView-noVerticalMargin {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.smallVerticalMargin {
+.BringListView-smallVerticalMargin {
   margin-top: 0.5em;
   margin-bottom: 0.5em;
 }
 
-.settingsContainer {
+.BringListView-settingsContainer {
   margin-top: 1em;
   margin-bottom: 1em;
 }
 
-.tagListContainer {
+.BringListView-tagListContainer {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -25,37 +46,37 @@
   /* Erase the margin on the children and put the margin on the container */
 }
 
-.tagListHeader,
-.nightsHeader,
-.tagList,
-.nightsInput,
-.resetButtonHeader,
-.resetButton {
+.BringListView-tagListHeader,
+.BringListView-nightsHeader,
+.BringListView-tagList,
+.BringListView-nightsInput,
+.BringListView-resetButtonHeader,
+.BringListView-resetButton {
   display: inline-flex;
 }
 
-.resetButtonConfirming {
+.BringListView-resetButtonConfirming {
   font-weight: bold;
   color: red;
 }
 
-.nightsInput {
+.BringListView-nightsInput {
   margin-left: 1em;
   max-width: 10ex;
 }
 
-.tagListNoneSelected {
+.BringListView-tagListNoneSelected {
   display: none;
 }
 
-.tagList {
+.BringListView-tagList {
   /* Undo list padding */
   padding-left: 0;
   flex-wrap: wrap;
   margin: 0;
 }
 
-.tag {
+.BringListView-tag {
   display: inline-flex;
   justify-content: flex-start;
   background-color: #f0f0f0;
@@ -68,37 +89,37 @@
   transition: background-color 0.1s, color 0.1s;
 }
 
-.tag:hover {
+.BringListView-tag:hover {
   text-decoration: underline;
 }
 
-.tag.tag-selected {
+.BringListView-tag.BringListView-tag-selected {
   background-color: #5cfa5c;
   color: #000000;
 }
 
 @media print {
-  .tagListNoneSelected {
+  .BringListView-tagListNoneSelected {
     display: inline-flex;
   }
 
-  .tag {
+  .BringListView-tag {
     display: none;
   }
 
-  .tag.tag-selected {
+  .BringListView-tag.BringListView-tag-selected {
     display: inline-flex;
   }
 }
 
 @media print {
-  .resetButtonContainer {
+  .BringListView-resetButtonContainer {
     display: none;
   }
 }
 
 @media print {
-  .bringListCategoryContainer {
+  .BringListView-bringListCategoryContainer {
     page-break-inside: avoid;
   }
 }
@@ -113,13 +134,13 @@
   }
 }
 
-.bringListCategory {
+.BringListView-bringListCategory {
   padding-left: 0;
   list-style: none outside;
   animation: highlightBLIChange 1s linear running;
 }
 
-.bringListItem {
+.BringListView-bringListItem {
   display: flex;
   flex-direction: row;
   width: fit-content;
@@ -127,7 +148,7 @@
   animation: fadein 0.1s linear;
 }
 
-.BringListExplain {
+.BringListView-BringListExplain {
   font-size: small;
   font-weight: normal;
   color: darkgray;
@@ -136,52 +157,52 @@
   display: none;
 }
 
-.BringListExplainTrue {
+.BringListView-BringListExplainTrue {
   color: darkgreen;
 }
 
-.BringListExplainFalse {
+.BringListView-BringListExplainFalse {
   color: darkred;
 }
 
-.bringListCategoryContainer:hover .bringListCategoryHeader .BringListExplain {
+.BringListView-bringListCategoryContainer:hover .BringListView-bringListCategoryHeader .BringListView-BringListExplain {
   display: inline;
 }
 
-.bringListItem:hover .BringListExplain {
+.BringListView-bringListItem:hover .BringListView-BringListExplain {
   display: inline;
 }
 
-.bringListItemStriked {
+.BringListView-bringListItemStriked {
   text-decoration: line-through;
 }
 
 @media print {
-  .bringListItemStriked {
+  .BringListView-bringListItemStriked {
     display: none;
   }
 }
 
-.bootstrapCross {
+.BringListView-bootstrapCross {
   margin: 0 auto;
   color: red;
   opacity: 0.5;
 }
 
-.bootstrapCross:hover {
+.BringListView-bootstrapCross:hover {
   opacity: 1.0;
 }
 
 @media print {
-  .bootstrapCross {
+  .BringListView-bootstrapCross {
     display: none;
   }
 }
 
-.bootstrapCrossActive {
+.BringListView-bootstrapCrossActive {
   opacity: 1.0;
 }
 
-.bringListItemCheckbox {
+.BringListView-bringListItemCheckbox {
   margin-right: 1ex;
 }

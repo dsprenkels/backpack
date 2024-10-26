@@ -1,27 +1,20 @@
 import { NavLink } from "react-router-dom";
-import styles from "./Layout.module.css";
+import "./Layout.css";
 
-export function Header(props: { children: React.ReactNode }) {
-    return (
-        <header className={styles.header}>
-            <h1>{props.children}</h1>
-        </header>
-    )
-}
 
-export function EditHeader(props: {
+export function Header(props: {
     header: string,
     setHeader: (header: string) => void,
 }) {
     const inputFieldGrowPadding = 2
-    let classNames = [styles.headerInput]
+    let className = ["BringListView-headerInput"]
     if (props.header == "") {
-        classNames.push(styles.headerInputEmpty)
+        className.push("BringListView-headerInputEmpty")
     }
     return (
-        <header className={styles.header}>
+        <header className="BringListView-header">
             <input
-                className={classNames.join(" ")}
+                className={className.join(" ")}
                 size={clamp(20, props.header.length + inputFieldGrowPadding, 50)}
                 value={props.header}
                 placeholder="untitled list"
@@ -32,8 +25,8 @@ export function EditHeader(props: {
 }
 
 export function Nav() {
-    let maybeActiveClass = ({ isActive }: { isActive: boolean }) => isActive ? styles.navLinkActive : ""
-    return <div className={styles.navContainer}>
+    let maybeActiveClass = ({ isActive }: { isActive: boolean }) => isActive ? "Nav-LinkActive" : ""
+    return <div className="Nav-container">
         <NavLink to="/view" className={maybeActiveClass}>
             View list
         </NavLink>

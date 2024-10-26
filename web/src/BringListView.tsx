@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import styles from './BringListView.module.css';
-import { EditHeader, Nav } from './Layout';
+import './BringListView.css';
+import { Header, Nav } from './Layout';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
-import { AppState } from './store';
-import { resetAll, setCheckedBLItem, setHeader, setNights, setStrikedBLItem, toggleTag } from './bringlistSlice';
+import { RootState, resetAll, setCheckedBLItem, setHeader, setNights, setStrikedBLItem, toggleTag } from './store';
+
 
 function TagList(
   props: {
@@ -20,7 +20,7 @@ function TagList(
       selected={props.selectedTags[tagName]}
       toggleTag={props.toggleTag} />
   )
-  return <ul className={styles.tagList}>
+  return <ul className="BringListView-tagList">
     {tagElems}
   </ul>
 }
@@ -30,9 +30,9 @@ function Tag(props: {
   selected: boolean,
   toggleTag: (tag: string, enabled: boolean) => void,
 }) {
-  let classNames = [styles.tag]
+  let classNames = ["BringListView-tag"]
   if (props.selected) {
-    classNames.push(styles["tag-selected"])
+    classNames.push("BringListView-tag-selected")
   }
   return <li
     className={classNames.join(' ')}
@@ -85,15 +85,15 @@ function BringListCategory(props: {
   let annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)]
 
-  return <div className={styles.bringListCategoryContainer}>
-    <h2 className={styles.bringListCategoryHeader}>
+  return <div className="BringListView-bringListCategoryContainer">
+    <h2 className="BringListView-bringListCategoryHeader">
       {props.blc.category}
       <BringListExplain
         isTrue={props.blcIsTrue}
         isFalse={props.blcIsFalse}
       />
     </h2>
-    <ul className={styles.bringListCategory}>
+    <ul className="BringListView-bringListCategory">
       {props.blc.items
         .map(annotate)
         .filter(([_, { isMatch }]) => isMatch)
@@ -129,12 +129,12 @@ function BringListItem(props: {
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
-  let liClassName = styles.bringListItem
+  let liClassName = "BringListView-bringListItem"
   if (props.isStriked) {
-    liClassName = `${liClassName} ${styles.bringListItemStriked}`
+    liClassName = `${liClassName} BringListView-bringListItemStriked`
   }
   return <li className={liClassName}>
-    <input className={styles.bringListItemCheckbox}
+    <input className="BringListView-bringListItemCheckbox"
       type="checkbox"
       onChange={(event) => props.setChecked(event.target.checked)}
       checked={props.isChecked}
@@ -145,7 +145,7 @@ function BringListItem(props: {
     </span>
 
     <span onClick={() => props.setStriked(!props.isStriked)}>
-      <BootstrapCross className={styles.bootstrapCross} height={16} />
+      <BootstrapCross className="BringListView-bootstrapCross" height={16} />
     </span>
     <BringListExplain isTrue={props.isTrue} isFalse={props.isFalse} />
   </li>
@@ -155,12 +155,12 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
   let explainList: JSX.Element[] = []
   for (let tag of props.isTrue) {
     explainList.push(
-      <span key={tag} className={styles.BringListExplainTrue}>{tag}</span>
+      <span key={tag} className="BringListView-BringListExplainTrue">{tag}</span>
     )
   }
   for (let tag of props.isFalse) {
     explainList.push(
-      <span key={tag} className={styles.BringListExplainFalse}>!{tag}</span>
+      <span key={tag} className="BringListView-BringListExplainFalse">!{tag}</span>
     )
   }
 
@@ -174,7 +174,7 @@ function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
     }
   }
 
-  return <span className={styles.BringListExplain}>[
+  return <span className="BringListView-BringListExplain">[
     {explainJSX}
     ]</span>
 }
@@ -205,12 +205,12 @@ function Settings(props: {
   const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(props.bringList)), [props.bringList])
 
   let noneSelectedElement = Object.keys(props.tags).length === 0 ?
-    <div className={styles.tagListNoneSelected}> no tags selected</div > : <></>
+    <div className="BringListView-tagListNoneSelected">no tags selected</div> : <></>
 
   let resetButton;
   if (resetConfirming) {
     resetButton = <input
-      className={`${styles.resetButton} ${styles.resetButtonConfirming}`}
+      className="BringListView-resetButton BringListView-resetButtonConfirming"
       type="button"
       value="click again to confirm"
       onClick={() => {
@@ -222,7 +222,7 @@ function Settings(props: {
     />
   } else {
     resetButton = <input
-      className={styles.resetButton}
+      className="BringListView-resetButton"
       type="button"
       value="reset everything"
       onClick={() => {
@@ -236,9 +236,9 @@ function Settings(props: {
     />
   }
 
-  return <div className={styles.settingsContainer}>
-    <div className={`${styles.tagListContainer} ${styles.smallVerticalMargin}`}>
-      <h3 className={`${styles.tagListHeader} ${styles.noVerticalMargin}`}>Tags:</h3>
+  return <div className="BringListView-settingsContainer">
+    <div className="BringListView-tagListContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-tagListHeader BringListView-noVerticalMargin">Tags:</h3>
       {noneSelectedElement}
       <TagList
         allTags={tagList}
@@ -246,58 +246,59 @@ function Settings(props: {
         toggleTag={props.toggleTag}
       />
     </div>
-    <div className={`${styles.nightsContainer} ${styles.smallVerticalMargin}`}>
-      <h3 className={`${styles.nightsHeader} ${styles.noVerticalMargin}`}>Nachten:</h3>
-      <input className={styles.nightsInput}
+    <div className="BringListView-nightsContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-nightsHeader BringListView-noVerticalMargin">Nachten:</h3>
+      <input className="BringListView-nightsInput"
         type="number"
         min="1"
         value={props.nights}
         onChange={(e) => props.setNights(e.target.valueAsNumber)}
       />
     </div>
-    <div className={`${styles.resetButtonContainer} ${styles.smallVerticalMargin}`}>
-      <h3 className={`${styles.resetButtonHeader} ${styles.noVerticalMargin}`}>Reset:</h3>
+    <div className="BringListView-resetButtonContainer BringListView-smallVerticalMargin">
+      <h3 className="BringListView-resetButtonHeader BringListView-noVerticalMargin">Reset:</h3>
       <> </>
       {resetButton}
     </div>
-  </div >
+  </div>
 }
 
 function BringListView() {
-  const header = useSelector((state: AppState) => state.bringlist.header)
-  const blt = useSelector((state: AppState) => state.bringlist.bringListTemplate)
-  const tags = useSelector((state: AppState) => state.bringlist.tags)
-  const nights = useSelector((state: AppState) => state.bringlist.nights)
-  const checkedItems = useSelector((state: AppState) => state.bringlist.checkedItems)
-  const strikedItems = useSelector((state: AppState) => state.bringlist.strikedItems)
+  const header = useSelector((state: RootState) => state.header)
+  const blt = useSelector((state: RootState) => state.bringListTemplate)
+  const bl = useMemo(() => filterspec.parseDatabase(blt), [blt])
+  const tags = useSelector((state: RootState) => state.tags)
+  const nights = useSelector((state: RootState) => state.nights)
+  const filter: Filter = { tags: new Set(Object.keys(tags)), nights: nights }
+  const checkedItems = useSelector((state: RootState) => state.checkedItems)
+  const strikedItems = useSelector((state: RootState) => state.strikedItems)
   const dispatch = useDispatch()
 
-  const bl = useMemo(() => filterspec.parseDatabase(blt), [blt])
-  const filter: Filter = { tags: new Set(Object.keys(tags)), nights: nights }
-
-  return <>
-    <EditHeader
-      header={header}
-      setHeader={(header) => dispatch(setHeader(header))}
-    />
-    <Nav />
-    <Settings
-      bringList={bl}
-      tags={tags}
-      toggleTag={(tag) => dispatch(toggleTag(tag))}
-      nights={nights}
-      setNights={(n) => dispatch(setNights(n))}
-      doResetAll={() => dispatch(resetAll())}
-    />
-    <BringList
-      bringList={bl}
-      filter={filter}
-      checkedItems={checkedItems}
-      setItemChecked={(item, checked) => dispatch(setCheckedBLItem({ item, checked }))}
-      strikedItems={strikedItems}
-      setItemStriked={(item, striked) => dispatch(setStrikedBLItem({ item, striked }))}
-    />
-  </>
+  return (
+    <div className="BringListView">
+      <Header
+        header={header}
+        setHeader={(header) => dispatch(setHeader(header))}
+      />
+      <Nav />
+      <Settings
+        bringList={bl}
+        tags={tags}
+        toggleTag={(tag) => dispatch(toggleTag(tag))}
+        nights={nights}
+        setNights={(n) => dispatch(setNights(n))}
+        doResetAll={() => dispatch(resetAll())}
+      />
+      <BringList
+        bringList={bl}
+        filter={filter}
+        checkedItems={checkedItems}
+        setItemChecked={(item, checked) => dispatch(setCheckedBLItem({ item, checked }))}
+        strikedItems={strikedItems}
+        setItemStriked={(item, striked) => dispatch(setStrikedBLItem({ item, striked }))}
+      />
+    </div>
+  );
 }
 
 export default BringListView;
