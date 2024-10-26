@@ -105,37 +105,22 @@ AppDataSource.initialize().then(async () => {
         cb(null, user);
     });
 
-    // Login with GitHub OAuth
-    app.get(`${rootURL.pathname}/auth/github`, passport.authenticate('github'));
+    // Routes
     app.get(`${rootURL.pathname}/auth/github/callback`,
         passport.authenticate('github', {
             successRedirect: `${rootURL.pathname}/`,
             failureRedirect: '/backpack/auth/github',
         }),
     );
-
-    // Logout
-    app.get(`${rootURL.pathname}/auth/logout`, (req, res) => {
-        req.session.destroy((error?: Error) => {
-            if (error) {
-                console.error('failed to destroy session', error)
-                res.status(500).send(`Internal server error: failed to destroy session: ${error.toString()}`)
-            } else {
-                res.redirect(`${rootURL.pathname}/`);
-            }
-        })
-    });
-
+    app.get(`${rootURL.pathname}/auth/github`, passport.authenticate('github'));
 
     // User info API
-    app.get(`${rootURL.pathname}/api/user`, async (req, res) => {
+    app.get(`${rootURL.pathname}/api/user`, (req, res) => {
         if (!req.isAuthenticated()) {
             res.status(401).send('Unauthorized')
             return
         }
-        let repo = AppDataSource.getRepository(User)
-        let user = await repo.findOneBy({ id: (req.user as User).id })
-        res.json(user)
+        res.json(req.user)
     })
 
     // Userstore API

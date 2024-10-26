@@ -1,22 +1,11 @@
 import { SerializedError, createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 
-export interface GitHubUser {
-    id?: number,
-    githubId?: number,
-    githubLogin?: string,
-    displayName?: string,
-    avatarURL?: string,
-    createdAt?: string,
-    updatedAt?: string,
-}
-
-export type User = GitHubUser
-
 export interface UserState {
-    user: User | null,
+    user: string | null,
     error?: SerializedError,
     status: "uninitialized" | "loading" | "succeeded" | "failed",
 }
+
 
 export const fetchUser = createAsyncThunk('fetchUser', async () => {
     const resp = await fetch(import.meta.env.BASE_URL + "api/user")
@@ -38,7 +27,7 @@ export const userSlice = createSlice({
         })
         builder.addCase(fetchUser.fulfilled, (state, action) => {
             state.status = "succeeded"
-            state.user = action.payload as User
+            state.user = action.payload
         })
         builder.addCase(fetchUser.rejected, (state, action) => {
             state.status = "failed"

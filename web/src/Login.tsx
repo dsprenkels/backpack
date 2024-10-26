@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Header } from './Layout';
 import styles from './Login.module.css';
 import { AppState } from "./store";
-import { User } from "./userSlice";
 
 function Login() {
     const user = useSelector((state: AppState) => state.user.user);
@@ -27,9 +26,9 @@ function Login() {
     </>
 }
 
-function LoginStatus(props: { user: User | null }) {
+function LoginStatus(props: { user: string | null }) {
     if (props.user !== null) {
-        return <div className={styles.loginStatus}>Current status: logged in as GitHub user <strong>{props.user.githubLogin}</strong> ({props.user.githubId})</div>;
+        return <div className={styles.loginStatus}>Current status: logged in as <strong>{props.user}</strong></div>;
     } else {
         return <div className={styles.loginStatus}>Current status: <strong>not logged in</strong></div>;
     }
