@@ -82,9 +82,6 @@ export class UserStore {
     @PrimaryGeneratedColumn()
     id: string
 
-    @Column({ type: "jsonb", nullable: false })
-    content: string
-
     @OneToOne(type => User)
     @JoinColumn()
     @Index()

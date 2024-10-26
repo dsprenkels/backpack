@@ -67,14 +67,13 @@ export async function loadStore(): Promise<Store> {
     let localStore = loadStoreLocal()
     try {
         remoteStore = await loadStoreFromServer()
-        if (typeof remoteStore === "object" && remoteStore.revision > localStore.revision) {
-            console.info("remote store is newer, overwriting local store")
-            saveStoreLocal(remoteStore)
-            return fromSerializable(remoteStore)
-        }
-    }
-    catch (error) {
+    } catch (error) {
         console.warn("error loading store from server, using local store", error)
+    }
+    if (remoteStore !== undefined && remoteStore.revision > localStore.revision) {
+        console.info("remote store is newer, overwriting local store")
+        saveStoreLocal(remoteStore)
+        return fromSerializable(remoteStore)
     }
     return fromSerializable(localStore)
 }
