@@ -1,6 +1,8 @@
 {
+  "name": "backpack-vite",
   "private": true,
-  "type": "module",
+  "version": "0.0.0",
+  "type": "commonjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
