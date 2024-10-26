@@ -63,8 +63,11 @@ func setupRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"*"}
-	corsConfig.AllowCredentials = true
+	corsConfig.AllowOrigins = []string{rootURL}
+	if gin.DebugMode == "debug" {
+		corsConfig.AllowOrigins = append(corsConfig.AllowOrigins, "http://localhost:5173")
+		corsConfig.AllowCredentials = true
+	}
 	router.Use(cors.New(corsConfig))
 
 	if len(sessionSecret) == 0 {
@@ -241,8 +244,8 @@ func getUserStore(c *gin.Context) {
 		return
 	}
 
-	sql := `SELECT "store" FROM "user_stores" WHERE "user_id" = $1 LIMIT 1;`
-	row := db.QueryRow(context.Background(), sql, user_id)
+	stmt := `SELECT "store" FROM "user_stores" WHERE "user_id" = $1 LIMIT 1;`
+	row := db.QueryRow(context.Background(), stmt, user_id)
 	var store string
 	err := row.Scan(&store)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -276,21 +279,21 @@ func updateUserStore(c *gin.Context) {
 		return
 	}
 
-	var sql string
+	var stmt string
 	tx, err := db.Begin(context.Background())
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database begin"))
 		return
 	}
 	defer tx.Rollback(context.Background())
-	sql = `DELETE FROM "user_stores" WHERE "user_id" = $1`
-	_, err = tx.Exec(context.Background(), sql, user_id)
+	stmt = `DELETE FROM "user_stores" WHERE "user_id" = $1`
+	_, err = tx.Exec(context.Background(), stmt, user_id)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database delete"))
 		return
 	}
-	sql = `INSERT INTO "user_stores" ("user_id", "store") VALUES ($1, $2)`
-	_, err = tx.Exec(context.Background(), sql, user_id, req.Store)
+	stmt = `INSERT INTO "user_stores" ("user_id", "store") VALUES ($1, $2)`
+	_, err = tx.Exec(context.Background(), stmt, user_id, req.Store)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, errors.Wrap(err, "database insert"))
 		return
