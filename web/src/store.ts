@@ -1,137 +1,115 @@
-import { BringList, parseDatabase } from "./filterspec"
-import DEFAULT_BRINGLIST_TEMPLATE from "./template"
+import { configureStore, createAction, createListenerMiddleware, createReducer } from '@reduxjs/toolkit'
+import DEFAULT_BRINGLIST_TEMPLATE from './template'
+import { BringList, parseDatabase, parseDatabaseChecked } from './filterspec'
 
-const LOCALSTORAGE_PREFIX = "nl.as8.backpack."
-const LOCALSTORAGE_TEMPLATE = `${LOCALSTORAGE_PREFIX}template`
-const LOCALSTORAGE_TAGS = `${LOCALSTORAGE_PREFIX}tags`
-const LOCALSTORAGE_CHECKED = `${LOCALSTORAGE_PREFIX}checked`
-const LOCALSTORAGE_STRIKED = `${LOCALSTORAGE_PREFIX}striked`
-const LOCALSTORAGE_NIGHTS = `${LOCALSTORAGE_PREFIX}nights`
-const LOCALSTORAGE_HEADER = `${LOCALSTORAGE_PREFIX}header`
-
-function handleInvalidFormat(key: string, expectedType: string, json: any) {
-    console.error(`localStorage has invalid '${key}' ${expectedType}, deleting entry and backing up to '${key}~': ${json}`)
-    localStorage.setItem(`${key}~`, json)
-    localStorage.removeItem(key)
+export interface KeyValueDict<T> {
+    [key: string]: T
 }
 
-function loadStringSet(key: string): Set<string> {
-    let empty = new Set<string>()
-    let json = localStorage.getItem(key)
-    if (json === null) {
-        return empty
-    }
-    let tagsArray = JSON.parse(json)
-    if (!(tagsArray instanceof Array)) {
-        handleInvalidFormat(key, 'array', json)
-        return empty
-    }
-    return new Set<string>(tagsArray)
-}
-
-function saveStringSet(key: string, set: Set<string>) {
-    let array = Array.from(set)
-    let json = JSON.stringify(array)
-    localStorage.setItem(key, json)
-}
-
-export function loadTemplateOrDefault(): string {
-    let template = loadTemplate()
-    if (template === '') {
-        return DEFAULT_BRINGLIST_TEMPLATE
-    }
-    return template
-}
-
-export function loadTemplate(): string {
-    let json = localStorage.getItem(LOCALSTORAGE_TEMPLATE)
-    if (json === null) {
-        return ""
-    }
-    let templateString = JSON.parse(json)
-    if (typeof templateString !== "string") {
-        handleInvalidFormat(LOCALSTORAGE_TEMPLATE, 'string', json)
-        return ""
-    }
-    return templateString
-}
-
-export function saveTemplate(template: string) {
-    let json = JSON.stringify(template)
-    localStorage.setItem(LOCALSTORAGE_TEMPLATE, json)
-}
-
-export function loadTags(): Set<string> {
-    return loadStringSet(LOCALSTORAGE_TAGS)
-}
-
-export function saveTags(tags: Set<string>) {
-    return saveStringSet(LOCALSTORAGE_TAGS, tags)
-}
-
-export function loadCheckedItems(): Set<string> {
-    return loadStringSet(LOCALSTORAGE_CHECKED)
-}
-
-export function saveCheckedItems(strikedItems: Set<string>) {
-    return saveStringSet(LOCALSTORAGE_CHECKED, strikedItems)
-}
-
-export function loadStrikedItems(): Set<string> {
-    return loadStringSet(LOCALSTORAGE_STRIKED)
-}
-
-export function saveStrikedItems(strikedItems: Set<string>) {
-    return saveStringSet(LOCALSTORAGE_STRIKED, strikedItems)
-}
-
-export function loadNights(): number {
-    let defaultNights = 3
-    let json = localStorage.getItem(LOCALSTORAGE_NIGHTS)
-    if (json === null) {
-        return defaultNights
-    }
-    let nights = JSON.parse(json)
-    if (typeof nights !== "number") {
-        handleInvalidFormat(LOCALSTORAGE_NIGHTS, 'number', json)
-        return defaultNights
-    }
-    return nights
-}
-
-export function saveNights(nights: number) {
-    let json = JSON.stringify(nights)
-    localStorage.setItem(LOCALSTORAGE_NIGHTS, json)
-}
-
-export function loadHeader(): string {
-    let defaultHeader = ""
-    let json = localStorage.getItem(LOCALSTORAGE_HEADER)
-    if (json === null) {
-        return defaultHeader
-    }
-    let header = JSON.parse(json)
-    if (typeof header !== "string") {
-        handleInvalidFormat(LOCALSTORAGE_HEADER, 'string', json)
-        return header
-    }
-    return header
-}
-
-export function saveHeader(header: string) {
-    let json = JSON.stringify(header)
-    localStorage.setItem(LOCALSTORAGE_HEADER, json)
-}
-
-export function clearAllLocalStorage() {
-    let keys = [
-        LOCALSTORAGE_TAGS,
-        LOCALSTORAGE_CHECKED,
-        LOCALSTORAGE_STRIKED,
-        LOCALSTORAGE_NIGHTS,
-        LOCALSTORAGE_HEADER,
-    ]
-    for (let key of keys) {
-        localStorage.removeItem(key)
+export interface State {
+    bringList: {
+        bringListTemplate: string,
+        bringList: BringList,
+        tags: string[],
+        checked: string[],
+        striked: string[],
+        nights: number,
+        header: string,
     }
 }
+
+export const setBringListTemplate = createAction<string>('bringlist/setTemplate')
+export const setTagEnabled = createAction<[string, boolean]>('bringlist/setTagEnabled')
+export const setChecked = createAction<[string, boolean]>('bringlist/setChecked')
+export const setStriked = createAction<[string, boolean]>('bringlist/setStriked')
+export const setNights = createAction<number>('bringlist/setNights')
+export const setHeader = createAction<string>('bringlist/setHeader')
+export const resetAllExceptTemplate = createAction('bringlist/resetAllExceptTemplate')
+
+function startingState(): State {
+    return {
+        bringList: {
+            bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
+            bringList: parseDatabase(DEFAULT_BRINGLIST_TEMPLATE),
+            tags: [],
+            checked: [],
+            striked: [],
+            nights: 3,
+            header: '',
+        }
+    }
+}
+
+function initialState(): State {
+    const stored = localStorage.getItem('com.electricdusk.backpack.v1.state')
+    return (stored ? JSON.parse(stored) : startingState())
+}
+
+const bringListReducer = createReducer(initialState, builder => {
+    builder.addCase(setBringListTemplate, (state, action) => {
+        state.bringList.bringListTemplate = action.payload
+        const parsed = parseDatabaseChecked(action.payload)
+        if (!(parsed instanceof Error)) {
+            state.bringList.bringList = parsed
+        }
+    })
+        .addCase(setTagEnabled, (state, action) => {
+            const [tag, enabled] = action.payload
+            if (enabled) {
+                state.bringList.tags.push(tag)
+                state.bringList.tags.sort()
+            } else {
+                state.bringList.tags = state.bringList.tags.filter(t => t !== tag)
+            }
+        })
+        .addCase(setChecked, (state, action) => {
+            const [item, checked] = action.payload
+            if (checked) {
+                state.bringList.checked.push(item)
+                state.bringList.checked.sort()
+            } else {
+                state.bringList.checked = state.bringList.checked.filter(t => t !== item)
+            }
+        })
+        .addCase(setStriked, (state, action) => {
+            const [item, striked] = action.payload
+            if (striked) {
+                state.bringList.striked.push(item)
+                state.bringList.striked.sort()
+            } else {
+                state.bringList.striked = state.bringList.striked.filter(t => t !== item)
+            }
+        })
+        .addCase(setNights, (state, action) => {
+            state.bringList.nights = action.payload
+        })
+        .addCase(setHeader, (state, action) => {
+            state.bringList.header = action.payload
+        })
+        .addCase(resetAllExceptTemplate, (state) => {
+            const template = state.bringList.bringListTemplate
+            const parsedDatabase = state.bringList.bringList
+            state.bringList = startingState().bringList
+            state.bringList.bringListTemplate = template
+            state.bringList.bringList = parsedDatabase
+        })
+})
+
+
+const localStorageMiddleware = createListenerMiddleware()
+localStorageMiddleware.startListening({
+    predicate: (action) => action.type.startsWith('bringlist/'),
+    effect: (action, api) => {
+        const state = api.getState() as State
+        localStorage.setItem('com.electricdusk.backpack.v1.state', JSON.stringify(state))
+    }
+})
+
+export const store = configureStore({
+    reducer: bringListReducer,
+    devTools: import.meta.env.MODE !== 'production',
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(localStorageMiddleware.middleware),
+})
+
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch

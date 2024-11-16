@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import './BringListView.css';
 import * as filterspec from './filterspec';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
 import { Header, Nav } from './Layout';
-import * as store from './store';
+import { useAppDispatch, useAppSelector } from './hooks';
+import { resetAllExceptTemplate, setChecked, setHeader, setNights, setStriked, setTagEnabled } from './store';
 
 
 function TagList(
@@ -58,9 +59,9 @@ function BringList(props: {
       .map(([blc, { isTrue, isFalse }]) => (
         <BringListCategory
           key={blc.category}
-          blc={blc}
-          blcIsTrue={isTrue}
-          blcIsFalse={isFalse}
+          BLC={blc}
+          BLCIsTrue={isTrue}
+          BLCIsFalse={isFalse}
           filter={props.filter}
           checkedItems={props.checkedItems}
           updateCheckedItems={props.updateCheckedItems}
@@ -72,9 +73,9 @@ function BringList(props: {
 }
 
 function BringListCategory(props: {
-  blc: BLC,
-  blcIsTrue: string[],
-  blcIsFalse: string[],
+  BLC: BLC,
+  BLCIsTrue: string[],
+  BLCIsFalse: string[],
   filter: Filter,
   checkedItems: Set<string>,
   updateCheckedItems: (name: string, isChecked: boolean) => void,
@@ -86,14 +87,14 @@ function BringListCategory(props: {
 
   return <div className="BringListView-bringListCategoryContainer">
     <h2 className="BringListView-bringListCategoryHeader">
-      {props.blc.category}
+      {props.BLC.category}
       <BringListExplain
-        isTrue={props.blcIsTrue}
-        isFalse={props.blcIsFalse}
+        isTrue={props.BLCIsTrue}
+        isFalse={props.BLCIsFalse}
       />
     </h2>
     <ul className="BringListView-bringListCategory">
-      {props.blc.items
+      {props.BLC.items
         .map(annotate)
         .filter(([_, { isMatch }]) => isMatch)
         .map(([item, { isTrue, isFalse }]) => <BringListItem
@@ -193,7 +194,7 @@ function BootstrapCross(props: { className?: string, width?: number, height?: nu
 function Settings(props: {
   bringList: filterspec.BringList,
   tags: Set<string>,
-  setTags: (tags: Set<string>) => void,
+  setTagEnabled: (tag: string, enabled: boolean) => void,
   nights: number,
   setNights: (nights: number) => void,
   doResetAll: () => void,
@@ -242,8 +243,7 @@ function Settings(props: {
       <TagList
         allTags={tagList}
         selectedTags={props.tags}
-        onSelectTag={(tag: string, enabled: boolean) =>
-          props.setTags(setAssign(props.tags, tag, enabled))}
+        onSelectTag={props.setTagEnabled}
       />
     </div>
     <div className="BringListView-nightsContainer BringListView-smallVerticalMargin">
@@ -264,72 +264,45 @@ function Settings(props: {
 }
 
 function BringListView() {
-  const [header, setHeader] = useState(store.loadHeader)
-  useEffect(() => store.saveHeader(header), [header])
+  const dispatch = useAppDispatch()
 
-  const [tags, setTags] = useState(store.loadTags)
-  useEffect(() => store.saveTags(tags), [tags])
-
-  const [nights, setNights] = useState(store.loadNights)
-  useEffect(() => store.saveNights(nights), [nights])
-
-  const [checkedItems, setCheckedItems] = useState(store.loadCheckedItems)
-  useEffect(() => store.saveCheckedItems(checkedItems), [checkedItems])
-
-  const [strikedItems, setStrikedItems] = useState(store.loadStrikedItems)
-  useEffect(() => store.saveStrikedItems(strikedItems), [strikedItems])
-
-  const bringList = useMemo(() => filterspec.parseDatabase(store.loadTemplateOrDefault()), [])
-
-  let doResetAll = () => {
-    store.clearAllLocalStorage()
-    setHeader(store.loadHeader)
-    setTags(store.loadTags)
-    setNights(store.loadNights)
-    setCheckedItems(store.loadCheckedItems)
-    setStrikedItems(store.loadStrikedItems)
-  }
+  const BL = useAppSelector((s) => s.bringList.bringList)
+  const checkedItems = new Set(useAppSelector((s) => s.bringList.checked))
+  const strikedItems = new Set(useAppSelector((s) => s.bringList.striked))
+  const tags = new Set(useAppSelector((s) => s.bringList.tags))
+  const nights = useAppSelector((s) => s.bringList.nights)
+  const header = useAppSelector((s) => s.bringList.header)
 
   let filter = { tags, nights }
   return (
     <div className="BringListView">
       <Header
         header={header}
-        setHeader={setHeader}
+        setHeader={(header) => dispatch(setHeader(header))}
       />
       <Nav />
       <Settings
-        bringList={bringList}
+        bringList={BL}
         tags={tags}
-        setTags={setTags}
+        setTagEnabled={(tag, enabled) => dispatch(setTagEnabled([tag, enabled]))}
         nights={nights}
-        setNights={setNights}
-        doResetAll={doResetAll}
+        setNights={(nights) => dispatch(setNights(nights))}
+        doResetAll={() => dispatch(resetAllExceptTemplate())}
       />
       <BringList
-        bringList={bringList}
+        bringList={BL}
         filter={filter}
         checkedItems={checkedItems}
         updateCheckedItems={(name: string, isChecked: boolean) => {
-          setCheckedItems(setAssign(checkedItems, name, isChecked))
+          dispatch(setChecked([name, isChecked]))
         }}
         strikedItems={strikedItems}
         updateStrikedItems={(name: string, isStriked: boolean) => {
-          setStrikedItems(setAssign(strikedItems, name, isStriked))
+          dispatch(setStriked([name, isStriked]))
         }}
       />
     </div>
   );
-}
-
-function setAssign<T>(_set: Set<T>, key: T, enabled: boolean): Set<T> {
-  let set = new Set(_set)
-  if (enabled) {
-    set.add(key)
-  } else {
-    set.delete(key)
-  }
-  return set
 }
 
 export default BringListView;

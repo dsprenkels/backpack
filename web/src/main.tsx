@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { Provider } from 'react-redux';
 import {
   createBrowserRouter, RouteObject,
   RouterProvider
@@ -8,6 +9,7 @@ import BringListEdit from './BringListEdit';
 import BringListView from './BringListView';
 import { ErrorPage } from './ErrorPage';
 import './index.css';
+import { store } from './store';
 
 const routes: RouteObject[] = [
   { path: '/', element: <BringListView />, errorElement: <ErrorPage /> },
@@ -25,7 +27,9 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
   </React.StrictMode>
 );
 
