@@ -65,11 +65,11 @@ export let nightsRangeDouble: P<NightsRange> =
         )
 export let nightsRange: P<NightsRange> = nightsRangeSingle.or(nightsRangeDouble)
 
-export let ident: P<string> =
-    new parse.Regex(/^[A-Za-z_][A-Za-z0-9_-]*/).tag(["identifier"])
+export let tagIdent: P<string> =
+    new parse.Regex(/^[A-Za-z0-9_][A-Za-z0-9_-]*/).tag(["identifier"])
 
-export let tagIdent: P<TagIdent> =
-    ident
+export let tagLit: P<TagIdent> =
+    tagIdent
         .space()
         .map((ident: string) => ({ kind: "TagIdent", ident }))
 
@@ -109,7 +109,7 @@ export let parenExpr: P<TagExpr> =
         .parens(new parse.Symbol("(").space(), new parse.Symbol(")").space())
 
 export function otherTagExprParse(rest: string): parse.PResult<TagExpr> {
-    return parenExpr.or(notExpr, nightsRange, tagIdent).parse(rest)
+    return parenExpr.or(notExpr, nightsRange, tagLit).parse(rest)
 }
 
 export function tagExprParse(rest: string): parse.PResult<TagExpr> {
