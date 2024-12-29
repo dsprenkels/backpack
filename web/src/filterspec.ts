@@ -20,7 +20,17 @@ export interface TagIdent { kind: "TagIdent", ident: string }
 export interface Empty { kind: "Empty" }
 export interface NightsRange { kind: "NightsRange", lo?: number, hi?: number }
 
+// Warning types
+export interface BLTDuplicateCategoryWarning {
+    kind: "DuplicateCategory", category: string, nightsLo: number, nightsHi: number,
+}
+export interface BLTDuplicateItemWarning {
+    kind: "DuplicateItem", item: string, nightsLo: number, nightsHi: number,
+}
+export type BLTWarning = BLTDuplicateCategoryWarning | BLTDuplicateItemWarning
+
 const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
+const LOWEST_POSSIBLE_NIGHTS = 1
 
 function makeRangeSingle(op: string, num: number): NightsRange {
     switch (op) {
@@ -186,7 +196,7 @@ export let filterLine = new class FilterLineParser extends P<FilterLine> {
     }
 }()
 
-export function parseDatabase(input: string): BringList {
+export function parseBLT(input: string): BringList {
     let lines = input.split("\n")
     let enumeratedLines: [number, string][] = lines.map((line, index) => [index, line])
     let nonEmptyLines = enumeratedLines.filter(([idx, line]) =>
@@ -225,9 +235,9 @@ export function parseDatabase(input: string): BringList {
     return database
 }
 
-export function parseDatabaseChecked(db: string): BringList | Error {
+export function parseBLTChecked(db: string): BringList | Error {
     try {
-        return parseDatabase(db)
+        return parseBLT(db)
     } catch (err) {
         return err as Error
     }
@@ -322,4 +332,112 @@ export function collectTagsFromDB(bl: BringList): Set<string> {
         }
     }
     return tags
+}
+
+// filterspec.exprIsMatch(props.filter, item.tags)
+
+export function getAllNightBoundsInExpr(expr: TagExpr): number[] {
+    switch (expr.kind) {
+        case "BinOpExpr":
+            let left = getAllNightBoundsInExpr(expr.left)
+            let right = getAllNightBoundsInExpr(expr.right)
+            return [...left, ...right]
+        case "NotExpr":
+            return getAllNightBoundsInExpr(expr.inner)
+        case "TagIdent":
+        case "Empty":
+            return []
+        case "NightsRange":
+            let bounds: number[] = []
+            if (expr.lo !== undefined) {
+                bounds.push(expr.lo)
+            }
+            if (expr.hi !== undefined) {
+                bounds.push(expr.hi)
+            }
+            return bounds
+    }
+}
+
+/// Returns a sorted array of all unique night bounds in the given BringList.
+export function getAllNightBounds(blt: BringList): number[] {
+    let bounds = new Set<number>([LOWEST_POSSIBLE_NIGHTS])
+    for (let cat of blt) {
+        bounds = new Set([...bounds, ...getAllNightBoundsInExpr(cat.tags)])
+        for (let item of cat.items) {
+            bounds = new Set([...bounds, ...getAllNightBoundsInExpr(item.tags)])
+        }
+    }
+    let array = Array.from(bounds)
+    array.sort((a, b) => a - b)
+    return array
+}
+
+export function getBLTWarnings(blt: BringList): BLTWarning[] {
+    // TODO: Add warning for items or categories that are not matched by any filter
+
+    const nightBounds = getAllNightBounds(blt)
+    let duplicateCategories: { [key: string]: [number, number] } = {}
+    let duplicateItems: { [key: string]: [number, number] } = {} = {}
+
+    const addDuplicate = (obj: { [key: string]: [number, number] }, key: string, nights: number) => {
+        const lo = (obj[key] ?? []).at(0) ?? nights
+        const hi = (obj[key] ?? []).at(1) ?? nights
+        obj[key] = [Math.min(lo, nights), Math.max(hi, nights)]
+    }
+
+    for (const nights of nightBounds) {
+        const filter = { tags: new Set<string>(), nights }
+        let categories = new Set<string>()
+        let items = new Set<string>()
+
+        for (const cat of blt) {
+            if (exprIsMatch(filter, cat.tags).isMatch) {
+                if (categories.has(cat.category)) {
+                    addDuplicate(duplicateCategories, cat.category, nights)
+                }
+                categories.add(cat.category)
+
+                for (const item of cat.items) {
+                    if (exprIsMatch(filter, item.tags).isMatch) {
+                        if (items.has(item.name)) {
+                            addDuplicate(duplicateItems, item.name, nights)
+                        }
+                        items.add(item.name)
+                    }
+                }
+            }
+        }
+    }
+
+    console.log(duplicateCategories)
+    console.log(duplicateItems)
+
+    // Collate the warnings from the duplicateCategories and duplicateItems objects
+    let warnings: BLTWarning[] = []
+    for (const [category, nights] of Object.entries(duplicateCategories)) {
+        warnings.push({ kind: "DuplicateCategory", category, nightsLo: nights[0], nightsHi: nights[1] })
+    }
+    for (const [item, nights] of Object.entries(duplicateItems)) {
+        warnings.push({ kind: "DuplicateItem", item, nightsLo: nights[0], nightsHi: nights[1] })
+    }
+
+    return warnings
+}
+
+export function warningToString(warning: BLTWarning): string {
+    let nightsRangeStr
+    if (warning.kind === "DuplicateCategory" || warning.kind === "DuplicateItem") {
+        if (warning.nightsLo === warning.nightsHi) {
+            nightsRangeStr = `${warning.nightsLo}`
+        } else {
+            nightsRangeStr = `between ${warning.nightsLo}–${warning.nightsHi}`
+        }
+    }
+    switch (warning.kind) {
+        case "DuplicateCategory":
+            return `duplicate category: ${warning.category} when nights is ${nightsRangeStr}`
+        case "DuplicateItem":
+            return `duplicate item: ${warning.item} when nights is ${nightsRangeStr}`
+    }
 }

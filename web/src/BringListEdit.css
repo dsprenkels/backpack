@@ -14,3 +14,7 @@
 .BringListEdit-CompileErr {
     color: red;
 }
+
+.BringListEdit-CompileWarn {
+    color: darkblue;
+}

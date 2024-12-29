@@ -1,6 +1,6 @@
 import { configureStore, createAction, createListenerMiddleware, createReducer } from '@reduxjs/toolkit'
 import DEFAULT_BRINGLIST_TEMPLATE from './template'
-import { BringList, parseDatabase, parseDatabaseChecked } from './filterspec'
+import { BringList, parseBLT, parseBLTChecked } from './filterspec'
 
 export interface KeyValueDict<T> {
     [key: string]: T
@@ -30,7 +30,7 @@ function startingState(): State {
     return {
         bringList: {
             bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
-            bringList: parseDatabase(DEFAULT_BRINGLIST_TEMPLATE),
+            bringList: parseBLT(DEFAULT_BRINGLIST_TEMPLATE),
             tags: [],
             checked: [],
             striked: [],
@@ -48,7 +48,7 @@ function initialState(): State {
 const bringListReducer = createReducer(initialState, builder => {
     builder.addCase(setBringListTemplate, (state, action) => {
         state.bringList.bringListTemplate = action.payload
-        const parsed = parseDatabaseChecked(action.payload)
+        const parsed = parseBLTChecked(action.payload)
         if (!(parsed instanceof Error)) {
             state.bringList.bringList = parsed
         }
