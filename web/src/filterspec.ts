@@ -31,6 +31,7 @@ export type BLTWarning = BLTDuplicateCategoryWarning | BLTDuplicateItemWarning
 
 const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 const LOWEST_POSSIBLE_NIGHTS = 1
+const UNREACHABLE = new Error("unreachable")
 
 function makeRangeSingle(op: string, num: number): NightsRange {
     switch (op) {
@@ -226,7 +227,7 @@ export function parseBLT(input: string): BringList {
             }
             currentCategory.items.push(fl)
         } else {
-            throw new Error("unreachable")
+            throw UNREACHABLE
         }
     }
     if (currentCategory) {
@@ -243,15 +244,25 @@ export function parseBLTChecked(db: string): BringList | Error {
     }
 }
 
+function nightsRangeIsMatch(nights: number, expr: NightsRange): boolean {
+    if (expr.lo !== undefined && nights < expr.lo) {
+        return false
+    }
+    if (expr.hi !== undefined && nights > expr.hi) {
+        return false
+    }
+    return true
+}
+
 export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
     const noMatch = { isMatch: false, isTrue: [], isFalse: [] }
     let isMatch
     switch (expr.kind) {
         case "BinOpExpr":
-            let left = exprIsMatch(filter, expr.left)
-            let right = exprIsMatch(filter, expr.right)
-            let allTrue = left.isTrue.concat(right.isTrue)
-            let allFalse = left.isFalse.concat(right.isFalse)
+            const left = exprIsMatch(filter, expr.left)
+            const right = exprIsMatch(filter, expr.right)
+            const allTrue = left.isTrue.concat(right.isTrue)
+            const allFalse = left.isFalse.concat(right.isFalse)
             if (expr.op === "&" && !left.isMatch) {
                 return left
             } else if (expr.op === "&") {
@@ -277,13 +288,9 @@ export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
             }
             return noMatch
         case "NightsRange":
-            if (expr.lo !== undefined && filter.nights < expr.lo) {
-                return noMatch
-            }
-            if (expr.hi !== undefined && filter.nights > expr.hi) {
-                return noMatch
-            }
-            return { isMatch: true, isTrue: [], isFalse: [] }
+            return nightsRangeIsMatch(filter.nights, expr) ?
+                { isMatch: true, isTrue: [], isFalse: [] } : noMatch
+
         case "NotExpr":
             let inner = exprIsMatch(filter, expr.inner)
             isMatch = !inner.isMatch
@@ -302,15 +309,49 @@ export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
         case "Empty":
             return { isMatch: true, isTrue: [], isFalse: [] }
         default:
-            throw new Error("unreachable")
+            throw UNREACHABLE
+    }
+}
+
+export function daysExprIsMatch(nightsFilter: number, expr: TagExpr): boolean | "n/a" {
+    switch (expr.kind) {
+        case "BinOpExpr":
+            const left = daysExprIsMatch(nightsFilter, expr.left)
+            const right = daysExprIsMatch(nightsFilter, expr.right)
+            if (right === null) {
+                return left
+            }
+            if (left === null) {
+                return right
+            }
+            if (expr.op === "&") {
+                return left && right;
+            } if (expr.op === "|") {
+                return left || right;
+            } if (expr.op === "^") {
+                return left !== right;
+            }
+            throw UNREACHABLE
+        case "NightsRange":
+            return nightsRangeIsMatch(nightsFilter, expr)
+        case "NotExpr":
+            let inner = daysExprIsMatch(nightsFilter, expr.inner);
+            if (inner === "n/a") return "n/a"
+            return !inner
+        case "TagIdent":
+            return "n/a"
+        case "Empty":
+            return "n/a"
+        default:
+            throw UNREACHABLE
     }
 }
 
 export function collectTagsFromExpr(expr: TagExpr): Set<string> {
     switch (expr.kind) {
         case "BinOpExpr":
-            let left = collectTagsFromExpr(expr.left)
-            let right = collectTagsFromExpr(expr.right)
+            const left = collectTagsFromExpr(expr.left)
+            const right = collectTagsFromExpr(expr.right)
             return new Set([...left, ...right])
         case "NotExpr":
             return collectTagsFromExpr(expr.inner)
@@ -392,14 +433,14 @@ export function getBLTWarnings(blt: BringList): BLTWarning[] {
         let items = new Set<string>()
 
         for (const cat of blt) {
-            if (exprIsMatch(filter, cat.tags).isMatch) {
+            if (daysExprIsMatch(nights, cat.tags) !== false) {
                 if (categories.has(cat.category)) {
                     addDuplicate(duplicateCategories, cat.category, nights)
                 }
                 categories.add(cat.category)
 
                 for (const item of cat.items) {
-                    if (exprIsMatch(filter, item.tags).isMatch) {
+                    if (daysExprIsMatch(nights, item.tags) !== false) {
                         if (items.has(item.name)) {
                             addDuplicate(duplicateItems, item.name, nights)
                         }
