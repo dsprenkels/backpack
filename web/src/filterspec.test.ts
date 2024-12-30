@@ -1,8 +1,6 @@
-import { assert, expect, test } from 'vitest'
+import { expect, test } from 'vitest'
 import { PResultOk } from './parse'
 import * as filter from './filterspec'
-
-const ERR = { ok: false }
 
 function ok<T>(value: T): PResultOk<T> {
     return { ok: true, rest: "", value }
@@ -51,7 +49,7 @@ test("tagExpr with double-ended range", () => {
 })
 
 test("complex items", () => {
-    let expected = ok({
+    const expected = ok({
         "kind": "Item",
         "name": "rokjes/korte broeken",
         "everyNNights": 2,
@@ -106,7 +104,7 @@ test("not expr precedence", () => {
     //
     //   [ (!lichtgewicht) | ipad ]
 
-    let expected = ok({
+    const expected = ok({
         kind: "BinOpExpr",
         op: "|",
         left: {

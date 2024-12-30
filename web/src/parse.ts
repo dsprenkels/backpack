@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 export interface PResultOk<T> {
     readonly ok: true,
     readonly value: T,
@@ -14,10 +15,10 @@ export abstract class P<T> {
     abstract parse(rest: string): PResult<T>
 
     map<U>(f: (x: T) => U): P<U> {
-        let parser = this
+        const parser = this
         return new class Map extends P<U> {
             parse(rest: string): PResult<U> {
-                let result = parser.parse(rest)
+                const result = parser.parse(rest)
                 if (!result.ok) {
                     return result
                 }
@@ -31,21 +32,21 @@ export abstract class P<T> {
     }
 
     and<U>(p2: P<U>): P<[T, U]> {
-        let p1 = this
+        const p1 = this
         return new class And extends P<[T, U]> {
             parse(rest: string): PResult<[T, U]> {
-                let result1 = p1.parse(rest)
+                const result1 = p1.parse(rest)
                 if (!result1.ok) {
                     return result1
                 }
-                let item1 = result1.value
+                const item1 = result1.value
                 rest = result1.rest
 
-                let result2 = p2.parse(rest)
+                const result2 = p2.parse(rest)
                 if (!result2.ok) {
                     return result2
                 }
-                let item2 = result2.value
+                const item2 = result2.value
                 rest = result2.rest
 
                 return { ok: true, value: [item1, item2], rest }
@@ -56,7 +57,7 @@ export abstract class P<T> {
     }
 
     andMap<U, V>(f: (x1: T, x2: U) => V, p2: P<U>): P<V> {
-        let p1 = this
+        const p1 = this
         return new class AndMap extends P<V> {
             parse(rest: string): PResult<V> {
                 return p1
@@ -68,12 +69,12 @@ export abstract class P<T> {
     }
 
     or(...ps: P<T>[]): P<T> {
-        let p0: P<T> = this
+        const p0: P<T> = this
         return new class Or extends P<T> {
             parse(rest: string): PResult<T> {
                 let expected = new Set<string>()
-                for (let p of [p0].concat(ps)) {
-                    let result = p.parse(rest)
+                for (const p of [p0].concat(ps)) {
+                    const result = p.parse(rest)
                     if (result.ok) {
                         return result
                     }
@@ -85,12 +86,12 @@ export abstract class P<T> {
     }
 
     many(): P<T[]> {
-        let p = this
+        const p = this
         return new class Many extends P<T[]> {
             parse(rest: string): PResult<T[]> {
-                let items = []
+                const items = []
                 while (rest) {
-                    let parseResult = p.parse(rest)
+                    const parseResult = p.parse(rest)
                     if (!parseResult.ok) {
                         break
                     }
@@ -103,7 +104,7 @@ export abstract class P<T> {
     }
 
     some(): P<T[]> {
-        let p = this
+        const p = this
         return new class Some extends P<T[]> {
             parse(rest: string): PResult<T[]> {
                 return p
@@ -115,10 +116,10 @@ export abstract class P<T> {
     }
 
     space(): P<T> {
-        let p = this
+        const p = this
         return new class Space extends P<T> {
             parse(rest: string): PResult<T> {
-                let result = p.parse(rest)
+                const result = p.parse(rest)
                 if (!result.ok) {
                     return result
                 }
@@ -134,10 +135,10 @@ export abstract class P<T> {
     }
 
     optional<U>(defaultValue: U): P<T | U> {
-        let p = this
+        const p = this
         return new class Optional extends P<T | U> {
             parse(rest: string): PResult<T | U> {
-                let result = p.parse(rest)
+                const result = p.parse(rest)
                 if (!result.ok) {
                     return {
                         ok: true,
@@ -151,10 +152,10 @@ export abstract class P<T> {
     }
 
     eof(): P<T> {
-        let p = this
+        const p = this
         return new class EOF extends P<T> {
             parse(rest: string): PResult<T> {
-                let result = p.parse(rest)
+                const result = p.parse(rest)
                 if (!result.ok) { return result }
                 rest = result.rest
                 if (rest) {
@@ -167,7 +168,7 @@ export abstract class P<T> {
     }
 
     parens<L, R>(left: P<L>, right: P<R>): P<T> {
-        let p = this
+        const p = this
         return new class Parens extends P<T> {
             parse(rest: string): PResult<T> {
                 return left
@@ -180,10 +181,10 @@ export abstract class P<T> {
     }
 
     tag(tagNames: string[]): P<T> {
-        let p = this
+        const p = this
         return new class Tag extends P<T> {
             parse(rest: string): PResult<T> {
-                let result = p.parse(rest)
+                const result = p.parse(rest)
                 if (!result.ok) {
                     return {
                         ok: false,
@@ -204,7 +205,7 @@ export class Symbol extends P<string> {
     }
 
     parse(rest: string): PResult<string> {
-        let peek = rest.slice(0, this.literal.length)
+        const peek = rest.slice(0, this.literal.length)
         if (this.literal === peek) {
             rest = rest.slice(this.literal.length)
             return { ok: true, value: peek, rest }
@@ -219,7 +220,7 @@ export class Regex extends P<string> {
     }
 
     parse(rest: string): PResult<string> {
-        let m = rest.match(this.pattern)
+        const m = rest.match(this.pattern)
         if (m == null) {
             return {
                 ok: false,
@@ -227,15 +228,15 @@ export class Regex extends P<string> {
                 rest,
             }
         }
-        let value = m[0]
+        const value = m[0]
         rest = rest.slice(m[0].length)
         return { ok: true, value, rest }
     }
 }
 
-export let int = new class Int extends P<number> {
+export const int = new class Int extends P<number> {
     parse(rest: string): PResult<number> {
-        let m = rest.match(/\d+/)
+        const m = rest.match(/\d+/)
         if (m == null) {
             return { ok: false, expected: new Set(["integer"]), rest }
         }
@@ -243,9 +244,9 @@ export let int = new class Int extends P<number> {
     }
 }()
 
-export let float = new class Float extends P<number> {
+export const float = new class Float extends P<number> {
     parse(rest: string): PResult<number> {
-        let m = rest.match(/[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/)
+        const m = rest.match(/[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)/)
         if (m == null) {
             return { ok: false, expected: new Set(["float"]), rest }
         }

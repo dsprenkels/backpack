@@ -5,7 +5,7 @@ import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, I
 import { Header, Nav } from './Layout';
 import { useAppDispatch, useAppSelector } from './hooks';
 import { resetAllExceptTemplate, setChecked, setHeader, setNights, setStriked, setTagEnabled } from './store';
-
+import React from 'react';
 
 function TagList(
   props: {
@@ -13,7 +13,7 @@ function TagList(
     selectedTags: Set<string>,
     onSelectTag: (tag: string, enabled: boolean) => void,
   }) {
-  let tagElems = props.allTags.map(
+  const tagElems = props.allTags.map(
     (tagName) => <Tag
       key={tagName}
       name={tagName}
@@ -30,7 +30,7 @@ function Tag(props: {
   selected: boolean,
   onSelectTag: (tag: string, enabled: boolean) => void,
 }) {
-  let classNames = ["BringListView-tag"]
+  const classNames = ["BringListView-tag"]
   if (props.selected) {
     classNames.push("BringListView-tag-selected")
   }
@@ -49,13 +49,13 @@ function BringList(props: {
   strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
-  let annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
+  const annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
     [cat, filterspec.exprIsMatch(props.filter, cat.tags)]
 
   return <>
     {props.bringList
       .map(annotate)
-      .filter(([_, { isMatch }]) => isMatch)
+      .filter(([, { isMatch }]) => isMatch)
       .map(([blc, { isTrue, isFalse }]) => (
         <BringListCategory
           key={blc.category}
@@ -82,7 +82,7 @@ function BringListCategory(props: {
   strikedItems: Set<string>,
   updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
-  let annotate = (item: Item): [Item, ExprIsMatchResult] =>
+  const annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)]
 
   return <div className="BringListView-bringListCategoryContainer">
@@ -96,7 +96,7 @@ function BringListCategory(props: {
     <ul className="BringListView-bringListCategory">
       {props.BLC.items
         .map(annotate)
-        .filter(([_, { isMatch }]) => isMatch)
+        .filter(([, { isMatch }]) => isMatch)
         .map(([item, { isTrue, isFalse }]) => <BringListItem
           key={item.name}
           item={item}
@@ -123,9 +123,9 @@ function BringListItem(props: {
   setIsStriked: (isStriked: boolean) => void,
 }) {
   let itemText = props.item.name
-  let everyNNights = props.item.everyNNights
+  const everyNNights = props.item.everyNNights
   if (everyNNights !== undefined) {
-    let itemAmount = Math.ceil(props.filter.nights / everyNNights)
+    const itemAmount = Math.ceil(props.filter.nights / everyNNights)
     itemText = `${itemAmount}x ${props.item.name}`
   }
 
@@ -152,23 +152,23 @@ function BringListItem(props: {
 }
 
 function BringListExplain(props: { isTrue: string[], isFalse: string[] }) {
-  let explainList: JSX.Element[] = []
-  for (let tag of props.isTrue) {
+  const explainList: JSX.Element[] = []
+  for (const tag of props.isTrue) {
     explainList.push(
       <span key={tag} className="BringListView-BringListExplainTrue">{tag}</span>
     )
   }
-  for (let tag of props.isFalse) {
+  for (const tag of props.isFalse) {
     explainList.push(
       <span key={tag} className="BringListView-BringListExplainFalse">!{tag}</span>
     )
   }
 
   // Intersperse commas
-  let explainJSX: (JSX.Element | string)[] = []
+  const explainJSX: (JSX.Element | string)[] = []
   for (let idx = 0; idx < explainList.length; idx++) {
     explainJSX.push(explainList[idx])
-    let isLast = idx === explainList.length - 1
+    const isLast = idx === explainList.length - 1
     if (!isLast) {
       explainJSX.push(" & ")
     }
@@ -204,7 +204,7 @@ function Settings(props: {
   const [confirmResetTimeout, setConfirmResetTimout] = useState<ReturnType<typeof setTimeout> | null>()
   const tagList = useMemo(() => Array.from(filterspec.collectTagsFromDB(props.bringList)), [props.bringList])
 
-  let noneSelectedElement = props.tags.size === 0 ?
+  const noneSelectedElement = props.tags.size === 0 ?
     <div className="BringListView-tagListNoneSelected">no tags selected</div> : <></>
 
   let resetButton;
@@ -227,7 +227,7 @@ function Settings(props: {
       value="reset everything"
       onClick={() => {
         setResetConfirming(true)
-        let timeout = setTimeout(() => setResetConfirming(false), 10 * 1000)
+        const timeout = setTimeout(() => setResetConfirming(false), 10 * 1000)
         setConfirmResetTimout(timeout)
 
         setResetDebouncing(true)
@@ -273,7 +273,7 @@ function BringListView() {
   const nights = useAppSelector((s) => s.bringList.nights)
   const header = useAppSelector((s) => s.bringList.header)
 
-  let filter = { tags, nights }
+  const filter = { tags, nights }
   return (
     <div className="BringListView">
       <Header

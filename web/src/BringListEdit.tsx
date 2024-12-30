@@ -17,7 +17,7 @@ function CompileStatus(props: { compileResult: BringList | Error }): React.React
 
     const warnings = useMemo(() => getBLTWarnings(compileResult), [compileResult])
     if (warnings.length > 0) {
-        let fragments = []
+        const fragments = []
         for (let i = 0; i < warnings.length; i++) {
             if (i > 0) {
                 fragments.push(<br />)
@@ -40,7 +40,7 @@ function BringListEdit() {
     const dispatch = useAppDispatch()
     const header = useAppSelector(state => state.bringList.header)
     const BLT = useAppSelector(state => state.bringList.bringListTemplate)
-    let compiledBLT = parseBLTChecked(BLT)
+    const compiledBLT = parseBLTChecked(BLT)
 
     return <div className="BringListEdit">
         <Header

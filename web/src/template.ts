@@ -1,5 +1,3 @@
-import { BringList, parseBLT } from "./filterspec"
-
 export const DEFAULT_BRINGLIST_TEMPLATE: string =
     `
 // Kleding tot 10 dagen
