@@ -5,25 +5,34 @@ import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
 import React, { useMemo } from "react"
 
-function CompileStatus(props: { compileResult: BringList | Error }) {
+function CompileStatus(props: { compileResult: BringList | Error }): React.ReactElement {
     const compileResult = props.compileResult
     if (compileResult instanceof Error) {
-        return <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
-            compile error: {compileResult.message}
-        </span>
-    } else {
-        const warnings = useMemo(() => getBLTWarnings(compileResult), [compileResult])
-        if (warnings.length > 0) {
-            return warnings.map<React.ReactNode>(warning =>
-                <span className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
-                    warning: {warningToString(warning)}
-                </span>
-            ).reduce((prev, curr) => [prev, <br />, curr])
-        } else {
-            return <span className="BringListEdit-CompileStatus BringListEdit-CompileOk">
-                compilation succeeded
+        return (
+            <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
+                compile error: {compileResult.message}
             </span>
+        )
+    }
+
+    const warnings = useMemo(() => getBLTWarnings(compileResult), [compileResult])
+    if (warnings.length > 0) {
+        let fragments = []
+        for (let i = 0; i < warnings.length; i++) {
+            if (i > 0) {
+                fragments.push(<br />)
+            }
+            fragments.push(
+                <span className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
+                    warning: {warningToString(warnings[i])}
+                </span>
+            )
         }
+        return <>{fragments}</>
+    } else {
+        return <span className="BringListEdit-CompileStatus BringListEdit-CompileOk">
+            compilation succeeded
+        </span>
     }
 }
 
