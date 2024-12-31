@@ -31,6 +31,7 @@ export type BLTWarning = BLTDuplicateCategoryWarning | BLTDuplicateItemWarning
 
 const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 const LOWEST_POSSIBLE_NIGHTS = 1
+const UNREACHABLE = new Error("unreachable")
 
 function makeRangeSingle(op: string, num: number): NightsRange {
     switch (op) {
@@ -226,7 +227,7 @@ export function parseBLT(input: string): BringList {
             }
             currentCategory.items.push(fl)
         } else {
-            throw new Error("unreachable")
+            throw UNREACHABLE
         }
     }
     if (currentCategory) {
@@ -241,6 +242,16 @@ export function parseBLTChecked(db: string): BringList | Error {
     } catch (err) {
         return err as Error
     }
+}
+
+function nightsRangeIsMatch(nights: number, expr: NightsRange): boolean {
+    if (expr.lo !== undefined && nights < expr.lo) {
+        return false
+    }
+    if (expr.hi !== undefined && nights > expr.hi) {
+        return false
+    }
+    return true
 }
 
 export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
@@ -276,13 +287,8 @@ export function exprIsMatch(filter: Filter, expr: TagExpr): ExprIsMatchResult {
         }
         return noMatch
     } else if (expr.kind === "NightsRange") {
-        if (expr.lo !== undefined && filter.nights < expr.lo) {
-            return noMatch
-        }
-        if (expr.hi !== undefined && filter.nights > expr.hi) {
-            return noMatch
-        }
-        return { isMatch: true, isTrue: [], isFalse: [] }
+        return nightsRangeIsMatch(filter.nights, expr) ?
+            { isMatch: true, isTrue: [], isFalse: [] } : noMatch
     } else if (expr.kind === "NotExpr") {
         const inner = exprIsMatch(filter, expr.inner)
         isMatch = !inner.isMatch
@@ -390,14 +396,14 @@ export function getBLTWarnings(blt: BringList): BLTWarning[] {
         const items = new Set<string>()
 
         for (const cat of blt) {
-            if (exprIsMatch(filter, cat.tags).isMatch) {
+            if (daysExprIsMatch(nights, cat.tags) !== false) {
                 if (categories.has(cat.category)) {
                     addDuplicate(duplicateCategories, cat.category, nights)
                 }
                 categories.add(cat.category)
 
                 for (const item of cat.items) {
-                    if (exprIsMatch(filter, item.tags).isMatch) {
+                    if (daysExprIsMatch(nights, item.tags) !== false) {
                         if (items.has(item.name)) {
                             addDuplicate(duplicateItems, item.name, nights)
                         }
