@@ -485,12 +485,18 @@ export function warningToString(w: BLTWarning): string {
             nightsRangeStr = `between ${w.nightsLo}–${w.nightsHi}`
         }
     }
-    const tagStr = w.tags.join(" & ")
-    const tagsAreActive = w.tags.length > 1 ? " tags are active" : " tag is active"
+    let tagStr
+    if (w.tags.length === 0) {
+        tagStr = "no tags are active"
+    } else if (w.tags.length === 1) {
+        tagStr = `'${w.tags[0]}' tag is active`
+    } else {
+        tagStr = `'${w.tags.join(" & ")}' tags are active`
+    }
     switch (w.kind) {
         case "DuplicateCategory":
             return `duplicate category: ${w.category} when nights is ${nightsRangeStr}`
         case "DuplicateItem":
-            return `duplicate item: ${w.item} when '${tagStr}'${tagsAreActive} and nights is ${nightsRangeStr}`
+            return `duplicate item: ${w.item} when ${tagStr} and nights is ${nightsRangeStr}`
     }
 }
