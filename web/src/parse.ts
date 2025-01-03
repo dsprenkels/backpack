@@ -125,7 +125,7 @@ export abstract class P<T> {
                 }
                 rest = result.rest
                 let trim = 0
-                while (rest.charAt(trim) === " ") {
+                while (rest.charAt(trim) === " " || rest.charAt(trim) === "\t") {
                     trim++
                 }
                 return Object.assign(result, { rest: rest.slice(trim) })
@@ -231,6 +231,12 @@ export class Regex extends P<string> {
         const value = m[0]
         rest = rest.slice(m[0].length)
         return { ok: true, value, rest }
+    }
+}
+
+export const empty = new class Empty extends P<void> {
+    parse(rest: string): PResult<void> {
+        return { ok: true, value: undefined, rest }
     }
 }
 

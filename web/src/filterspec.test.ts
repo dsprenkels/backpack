@@ -93,6 +93,14 @@ test("complex items", () => {
     expect(filter.item.parse("rokjes/korte broeken [*2.5 zwemmen | warm & 0-10]")).toEqual(expected)
     expect(filter.item.parse("rokjes/korte broeken[ *2.5 zwemmen | warm & 0-10]")).toEqual(expected)
 
+    // Leading spaces in filter line
+    expect(filter.filterLine.parse("    rokjes/korte broeken[*2.5zwemmen|warm&0-10]")).toEqual(expected)
+    expect(filter.filterLine.parse("    rokjes/korte broeken [*2.5 zwemmen | warm & 0-10]")).toEqual(expected)
+    expect(filter.filterLine.parse("    rokjes/korte broeken[ *2.5 zwemmen | warm & 0-10]")).toEqual(expected)
+    expect(filter.filterLine.parse("    rokjes/korte broeken[*2.5zwemmen|warm&0-10]")).toEqual(expected)
+    expect(filter.filterLine.parse("    rokjes/korte broeken [*2.5 zwemmen | warm & 0-10]")).toEqual(expected)
+    expect(filter.filterLine.parse("    rokjes/korte broeken[ *2.5 zwemmen | warm & 0-10]")).toEqual(expected)
+
 })
 
 test("not expr precedence", () => {
@@ -135,4 +143,23 @@ test("getAllNightBounds", () => {
     expect(testCase("", "0-10")).toEqual([0, 1, 10])
     expect(testCase("3-7", "0-10")).toEqual([0, 1, 3, 7, 10])
     expect(testCase("0-10", "3-7")).toEqual([0, 1, 3, 7, 10])
+})
+
+test("getBLTWarnings", () => {
+    const bltStr = `// Kleding tot 10 dagen
+        # Kleding [ >=5 ]
+
+        topje [ *2 (warm & !lichtgewicht) & <= 10 ]
+        topje [ *1 (warm & !lichtgewicht) & <= 10 ]`
+    const blt = filter.parseBLT(bltStr)
+    const warnings = filter.getBLTWarnings(blt)
+    expect(warnings).toEqual([
+        {
+            "item": "topje",
+            "kind": "DuplicateItem",
+            "nightsHi": 10,
+            "nightsLo": 5,
+            "tags": ["warm"],
+        }
+    ])
 })

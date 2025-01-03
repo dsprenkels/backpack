@@ -22,10 +22,18 @@ export interface NightsRange { kind: "NightsRange", lo?: number, hi?: number }
 
 // Warning types
 export interface BLTDuplicateCategoryWarning {
-    kind: "DuplicateCategory", category: string, nightsLo: number, nightsHi: number,
+    kind: "DuplicateCategory",
+    category: string,
+    tags: string[],
+    nightsLo: number,
+    nightsHi: number,
 }
 export interface BLTDuplicateItemWarning {
-    kind: "DuplicateItem", item: string, nightsLo: number, nightsHi: number,
+    kind: "DuplicateItem",
+    item: string,
+    tags: string[],
+    nightsLo: number,
+    nightsHi: number,
 }
 export type BLTWarning = BLTDuplicateCategoryWarning | BLTDuplicateItemWarning
 
@@ -169,7 +177,7 @@ export const item: P<FilterLine> =
                     new parse.Symbol("[").space(),
                     new parse.Symbol("]").space(),
                 ).optional(defaultENDTE)
-        ).eof() as P<FilterLine>
+        )
 
 export const category: P<FilterLine> =
     new parse.Symbol("#").space()
@@ -186,16 +194,14 @@ export const category: P<FilterLine> =
             name: x[0][1],
             tags: x[1]
         }))
-        .eof() as P<FilterLine>
 
-export const filterLine = new class FilterLineParser extends P<FilterLine> {
-    parse(rest: string): parse.PResult<FilterLine> {
-        if (rest.startsWith("#")) {
-            return category.parse(rest)
-        }
-        return item.parse(rest)
-    }
-}()
+export const filterLine: P<FilterLine> = parse.empty
+    .space()
+    .andMap((_, x) => x, category.or(
+        parse.empty
+            .space()
+            .andMap((_, x) => x, item))
+    ).eof()
 
 export function parseBLT(input: string): BringList {
     const lines = input.split("\n")
@@ -377,71 +383,114 @@ export function getAllNightBounds(blt: BringList): number[] {
     return array
 }
 
+function combinations<T>(arr: T[]): T[][] {
+    if (arr.length === 0) {
+        return [[]]
+    }
+    const [head, ...tail] = arr
+    const tailCombinations = combinations(tail)
+    return tailCombinations.flatMap((comb) => [[head, ...comb], comb])
+}
+
+function product<T, U>(arr1: T[], arr2: U[]): [T, U][] {
+    const result: [T, U][] = []
+    for (const a of arr1) {
+        for (const b of arr2) {
+            result.push([a, b])
+        }
+    }
+    return result
+}
+
 export function getBLTWarnings(blt: BringList): BLTWarning[] {
     // TODO: Add warning for items or categories that are not matched by any filter
 
-    const nightBounds = getAllNightBounds(blt)
-    const duplicateCategories: { [key: string]: [number, number] } = {}
-    const duplicateItems: { [key: string]: [number, number] } = {}
-
-    const addDuplicate = (obj: { [key: string]: [number, number] }, key: string, nights: number) => {
-        const lo = (obj[key] ?? []).at(0) ?? nights
-        const hi = (obj[key] ?? []).at(1) ?? nights
-        obj[key] = [Math.min(lo, nights), Math.max(hi, nights)]
+    // First we collect all categories and items that are matched by the same nights
+    // They might still not be duplicates because their tag sets might be disjoint.
+    // We will check for that in the next step.
+    const allItems = blt.flatMap((cat) => cat.items.map(
+        (item) => ({ cat: cat.category, catTags: cat.tags, ...item })))
+    const itemCounts: { [name: string]: number } = {}
+    for (const item of allItems) {
+        itemCounts[item.name] = (itemCounts[item.name] ?? 0) + 1
+    }
+    const itemDuplicateCandidates: { [name: string]: (typeof allItems[0])[] } = {}
+    for (const item of allItems) {
+        if (itemCounts[item.name] === 1) {
+            continue
+        }
+        const itemList = itemDuplicateCandidates[item.name] ?? []
+        itemList.push(item)
+        itemDuplicateCandidates[item.name] = itemList
     }
 
-    for (const nights of nightBounds) {
-        const filter = { tags: new Set<string>(), nights }
-        const categories = new Set<string>()
-        const items = new Set<string>()
-
-        for (const cat of blt) {
-            if (daysExprIsMatch(nights, cat.tags) !== false) {
-                if (categories.has(cat.category)) {
-                    addDuplicate(duplicateCategories, cat.category, nights)
+    // Check if there is any overlap in the combinations of tag sets for the potential duplicates
+    const duplicateItems: {
+        [name: string]: {
+            item: string, tags: string[], nightsLo: number, nightsHi: number
+        }
+    } = {}
+    for (const [name, items] of Object.entries(itemDuplicateCandidates)) {
+        const itemTags = items.flatMap((item) => collectTagsFromExpr(item.tags)).reduce((acc, x) => acc.union(x), new Set<string>())
+        const catTags = items.flatMap((item) => collectTagsFromExpr(item.catTags)).reduce((acc, x) => acc.union(x), new Set<string>())
+        const tagSet = itemTags.union(catTags)
+        const tagCombs = combinations(Array.from(tagSet))
+        const itemNightBounds = new Set(items.flatMap((item) => getAllNightBoundsInExpr(item.tags)))
+        const catNightBounds = new Set(items.flatMap((item) => getAllNightBoundsInExpr(item.catTags)))
+        const nightBounds = Array.from(new Set([...itemNightBounds, ...catNightBounds])).toSorted()
+        for (const [tagComb, nights] of product(tagCombs, nightBounds)) {
+            const filter: Filter = { tags: new Set(tagComb), nights }
+            const isMatch = (expr: TagExpr) => exprIsMatch(filter, expr).isMatch
+            const itemMatches = items.filter((item) => isMatch(item.tags) && isMatch(item.catTags))
+            if (itemMatches.length > 1) {
+                const dup = duplicateItems[name] ?? { item: name, tags: tagComb, nightsLo: nights, nightsHi: nights }
+                if (nights < dup.nightsLo) {
+                    dup.nightsLo = nights
                 }
-                categories.add(cat.category)
-
-                for (const item of cat.items) {
-                    if (daysExprIsMatch(nights, item.tags) !== false) {
-                        if (items.has(item.name)) {
-                            addDuplicate(duplicateItems, item.name, nights)
-                        }
-                        items.add(item.name)
-                    }
+                if (nights > dup.nightsHi) {
+                    dup.nightsHi = nights
                 }
+                duplicateItems[name] = dup
             }
+        }
+        if (duplicateItems[name]) {
+            // A duplicate has already been found for this item.  Skip the others
+            // to prevent cluttering the warning log.
+            continue
         }
     }
 
-    console.log(duplicateCategories)
-    console.log(duplicateItems)
 
     // Collate the warnings from the duplicateCategories and duplicateItems objects
     const warnings: BLTWarning[] = []
-    for (const [category, nights] of Object.entries(duplicateCategories)) {
-        warnings.push({ kind: "DuplicateCategory", category, nightsLo: nights[0], nightsHi: nights[1] })
-    }
-    for (const [item, nights] of Object.entries(duplicateItems)) {
-        warnings.push({ kind: "DuplicateItem", item, nightsLo: nights[0], nightsHi: nights[1] })
+    for (const dup of Object.values(duplicateItems)) {
+        warnings.push({
+            kind: "DuplicateItem",
+            item: dup.item,
+            tags: dup.tags,
+            nightsLo: dup.nightsLo,
+            nightsHi: dup.nightsHi,
+        })
     }
 
     return warnings
 }
 
-export function warningToString(warning: BLTWarning): string {
+export function warningToString(w: BLTWarning): string {
     let nightsRangeStr
-    if (warning.kind === "DuplicateCategory" || warning.kind === "DuplicateItem") {
-        if (warning.nightsLo === warning.nightsHi) {
-            nightsRangeStr = `${warning.nightsLo}`
+    if (w.kind === "DuplicateCategory" || w.kind === "DuplicateItem") {
+        if (w.nightsLo === w.nightsHi) {
+            nightsRangeStr = `${w.nightsLo}`
         } else {
-            nightsRangeStr = `between ${warning.nightsLo}–${warning.nightsHi}`
+            nightsRangeStr = `between ${w.nightsLo}–${w.nightsHi}`
         }
     }
-    switch (warning.kind) {
+    const tagStr = w.tags.join(" & ")
+    const tagsAreActive = w.tags.length > 1 ? " tags are active" : " tag is active"
+    switch (w.kind) {
         case "DuplicateCategory":
-            return `duplicate category: ${warning.category} when nights is ${nightsRangeStr}`
+            return `duplicate category: ${w.category} when nights is ${nightsRangeStr}`
         case "DuplicateItem":
-            return `duplicate item: ${warning.item} when nights is ${nightsRangeStr}`
+            return `duplicate item: ${w.item} when '${tagStr}'${tagsAreActive} and nights is ${nightsRangeStr}`
     }
 }

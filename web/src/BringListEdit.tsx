@@ -18,13 +18,13 @@ function CompileStatus(props: { compileResult: BringList | Error }): React.React
     const warnings = useMemo(() => getBLTWarnings(compileResult), [compileResult])
     if (warnings.length > 0) {
         const fragments = []
-        for (let i = 0; i < warnings.length; i++) {
+        for (const [i, warning] of warnings.entries()) {
             if (i > 0) {
                 fragments.push(<br />)
             }
             fragments.push(
-                <span className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
-                    warning: {warningToString(warnings[i])}
+                <span key={`warning_${i}`} className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
+                    warning: {warningToString(warning)}
                 </span>
             )
         }
