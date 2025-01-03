@@ -1,6 +1,5 @@
 import { NavLink } from "react-router-dom";
 import "./Layout.css";
-import React from "react";
 
 export function Header(props: {
     header: string,

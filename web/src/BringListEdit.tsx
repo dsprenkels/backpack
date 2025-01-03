@@ -3,7 +3,7 @@ import { BringList, getBLTWarnings, parseBLTChecked, warningToString } from "./f
 import { Header, Nav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
-import React, { useMemo } from "react"
+import { useMemo } from "react"
 
 function CompileStatus(props: { compileResult: BringList | Error }): React.ReactElement {
     const compileResult = props.compileResult

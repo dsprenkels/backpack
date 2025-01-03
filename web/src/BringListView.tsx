@@ -5,7 +5,6 @@ import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, I
 import { Header, Nav } from './Layout';
 import { useAppDispatch, useAppSelector } from './hooks';
 import { resetAllExceptTemplate, setChecked, setHeader, setNights, setStriked, setTagEnabled } from './store';
-import React from 'react';
 
 function TagList(
   props: {
