@@ -1,12 +1,14 @@
 import "./BringListEdit.css"
-import { BringList, getBLTWarnings, parseBLTChecked, warningToString } from "./filterspec"
+import { getBLTWarnings, parseBLTChecked, warningToString } from "./filterspec"
 import { Header, Nav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
 import { useMemo } from "react"
 
-function CompileStatus(props: { compileResult: BringList | Error }): React.ReactElement {
-    const compileResult = props.compileResult
+function CompileStatus(props: { blt: string }): React.ReactElement {
+    const compileResult = useMemo(() => parseBLTChecked(props.blt), [props.blt])
+    const warnings = useMemo(() => !(compileResult instanceof Error) ? getBLTWarnings(compileResult) : [], [compileResult])
+
     if (compileResult instanceof Error) {
         return (
             <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
@@ -15,12 +17,11 @@ function CompileStatus(props: { compileResult: BringList | Error }): React.React
         )
     }
 
-    const warnings = useMemo(() => getBLTWarnings(compileResult), [compileResult])
     if (warnings.length > 0) {
         const fragments = []
         for (const [i, warning] of warnings.entries()) {
             if (i > 0) {
-                fragments.push(<br />)
+                fragments.push(<br key={`warning_${i - 1}_br`} />)
             }
             fragments.push(
                 <span key={`warning_${i}`} className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
@@ -39,8 +40,7 @@ function CompileStatus(props: { compileResult: BringList | Error }): React.React
 function BringListEdit() {
     const dispatch = useAppDispatch()
     const header = useAppSelector(state => state.bringList.header)
-    const BLT = useAppSelector(state => state.bringList.bringListTemplate)
-    const compiledBLT = parseBLTChecked(BLT)
+    const blt = useAppSelector(state => state.bringList.bringListTemplate)
 
     return <div className="BringListEdit">
         <Header
@@ -48,11 +48,11 @@ function BringListEdit() {
             setHeader={(header) => dispatch(setHeader(header))}
         />
         <Nav />
-        <CompileStatus compileResult={compiledBLT} />
+        <CompileStatus blt={blt} />
         <textarea
             className="BringListEdit-textarea"
             onChange={(event => dispatch(setBringListTemplate(event.target.value)))}
-            value={BLT}
+            value={blt}
         />
     </div>
 }

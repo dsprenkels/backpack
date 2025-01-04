@@ -21,13 +21,6 @@ export interface Empty { kind: "Empty" }
 export interface NightsRange { kind: "NightsRange", lo?: number, hi?: number }
 
 // Warning types
-export interface BLTDuplicateCategoryWarning {
-    kind: "DuplicateCategory",
-    category: string,
-    tags: string[],
-    nightsLo: number,
-    nightsHi: number,
-}
 export interface BLTDuplicateItemWarning {
     kind: "DuplicateItem",
     item: string,
@@ -35,7 +28,11 @@ export interface BLTDuplicateItemWarning {
     nightsLo: number,
     nightsHi: number,
 }
-export type BLTWarning = BLTDuplicateCategoryWarning | BLTDuplicateItemWarning
+export interface NeverMatchedItemWarning {
+    kind: "NeverMatchedItem",
+    item: string,
+}
+export type BLTWarning = BLTDuplicateItemWarning | NeverMatchedItemWarning
 
 const EMPTY_TAG_EXPR: Empty = { kind: "Empty" }
 const LOWEST_POSSIBLE_NIGHTS = 1
@@ -403,8 +400,6 @@ function product<T, U>(arr1: T[], arr2: U[]): [T, U][] {
 }
 
 export function getBLTWarnings(blt: BringList): BLTWarning[] {
-    // TODO: Add warning for items or categories that are not matched by any filter
-
     // First we collect all categories and items that are matched by the same nights
     // They might still not be duplicates because their tag sets might be disjoint.
     // We will check for that in the next step.
@@ -435,8 +430,8 @@ export function getBLTWarnings(blt: BringList): BLTWarning[] {
         const catTags = items.flatMap((item) => collectTagsFromExpr(item.catTags)).reduce((acc, x) => acc.union(x), new Set<string>())
         const tagSet = itemTags.union(catTags)
         const tagCombs = combinations(Array.from(tagSet))
-        const itemNightBounds = new Set(items.flatMap((item) => getAllNightBoundsInExpr(item.tags)))
-        const catNightBounds = new Set(items.flatMap((item) => getAllNightBoundsInExpr(item.catTags)))
+        const itemNightBounds = new Set(items.flatMap((item) => [1].concat(getAllNightBoundsInExpr(item.tags))))
+        const catNightBounds = new Set(items.flatMap((item) => [1].concat(getAllNightBoundsInExpr(item.catTags))))
         const nightBounds = Array.from(new Set([...itemNightBounds, ...catNightBounds])).toSorted()
         for (const [tagComb, nights] of product(tagCombs, nightBounds)) {
             const filter: Filter = { tags: new Set(tagComb), nights }
@@ -460,6 +455,22 @@ export function getBLTWarnings(blt: BringList): BLTWarning[] {
         }
     }
 
+    // Find all items that are never matched by any filter
+    const neverMatchedItems = []
+    for (const item of allItems) {
+        const itemTags = collectTagsFromExpr(item.tags)
+        const catTags = collectTagsFromExpr(item.catTags)
+        const tagSet = itemTags.union(catTags)
+        const tagCombs = combinations(Array.from(tagSet))
+        const itemNightBounds = [1].concat(getAllNightBoundsInExpr(item.tags))
+        const catNightBounds = [1].concat(getAllNightBoundsInExpr(item.catTags))
+        const nightBounds = Array.from(new Set([...itemNightBounds, ...catNightBounds])).toSorted()
+        const filters: Filter[] = product(tagCombs, nightBounds).map(([tags, nights]) => ({ tags: new Set(tags), nights }))
+        const isMatch = filters.some((filter) => exprIsMatch(filter, item.tags).isMatch && exprIsMatch(filter, item.catTags).isMatch)
+        if (!isMatch) {
+            neverMatchedItems.push(item)
+        }
+    }
 
     // Collate the warnings from the duplicateCategories and duplicateItems objects
     const warnings: BLTWarning[] = []
@@ -472,31 +483,35 @@ export function getBLTWarnings(blt: BringList): BLTWarning[] {
             nightsHi: dup.nightsHi,
         })
     }
+    for (const item of neverMatchedItems) {
+        warnings.push({
+            kind: "NeverMatchedItem",
+            item: item.name,
+        })
+    }
 
     return warnings
 }
 
 export function warningToString(w: BLTWarning): string {
-    let nightsRangeStr
-    if (w.kind === "DuplicateCategory" || w.kind === "DuplicateItem") {
-        if (w.nightsLo === w.nightsHi) {
-            nightsRangeStr = `${w.nightsLo}`
-        } else {
-            nightsRangeStr = `between ${w.nightsLo}–${w.nightsHi}`
-        }
-    }
     let tagStr
-    if (w.tags.length === 0) {
-        tagStr = "no tags are active"
-    } else if (w.tags.length === 1) {
-        tagStr = `'${w.tags[0]}' tag is active`
-    } else {
-        tagStr = `'${w.tags.join(" & ")}' tags are active`
-    }
+    let nightsRangeStr
     switch (w.kind) {
-        case "DuplicateCategory":
-            return `duplicate category: ${w.category} when nights is ${nightsRangeStr}`
+        case "NeverMatchedItem":
+            return `item '${w.item}' is never matched by any filter`
         case "DuplicateItem":
-            return `duplicate item: ${w.item} when ${tagStr} and nights is ${nightsRangeStr}`
+            if (w.tags.length === 0) {
+                tagStr = "no tags are active"
+            } else if (w.tags.length === 1) {
+                tagStr = `'${w.tags[0]}' tag is active`
+            } else {
+                tagStr = `'${w.tags.join(" & ")}' tags are active`
+            }
+            if (w.nightsLo === w.nightsHi) {
+                nightsRangeStr = `${w.nightsLo}`
+            } else {
+                nightsRangeStr = `between ${w.nightsLo}–${w.nightsHi}`
+            }
+            return `duplicate item: '${w.item}' when ${tagStr} and nights is ${nightsRangeStr}`
     }
 }
