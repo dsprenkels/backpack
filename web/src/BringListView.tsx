@@ -265,7 +265,8 @@ function Settings(props: {
 function BringListView() {
   const dispatch = useAppDispatch()
 
-  const BL = useAppSelector((s) => s.bringList.bringList)
+  const BLT = useAppSelector((s) => s.bringList.bringListTemplate)
+  const BL = useMemo(() => filterspec.parseBLT(BLT), [BLT])
   const checkedItems = new Set(useAppSelector((s) => s.bringList.checked))
   const strikedItems = new Set(useAppSelector((s) => s.bringList.striked))
   const tags = new Set(useAppSelector((s) => s.bringList.tags))
