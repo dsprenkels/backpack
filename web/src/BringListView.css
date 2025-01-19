@@ -16,7 +16,7 @@
 }
 
 .BringListView-headerInputEmpty {
-  border-color: rgba(127, 127, 127, 255);
+  border: solid 1px grey;
 }
 
 .BringListView-link {

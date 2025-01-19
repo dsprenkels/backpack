@@ -40,7 +40,7 @@ function CompileStatus(props: { blt: string }): React.ReactElement {
 function BringListEdit() {
     const dispatch = useAppDispatch()
     const header = useAppSelector(state => state.bringList.header)
-    const blt = useAppSelector(state => state.bringList.bringListTemplate)
+    const BLT = useAppSelector(state => state.bringList.bringListTemplate)
 
     return <div className="BringListEdit">
         <Header
@@ -48,12 +48,12 @@ function BringListEdit() {
             setHeader={(header) => dispatch(setHeader(header))}
         />
         <Nav />
-        <CompileStatus blt={blt} />
-        <textarea
+        <CompileStatus blt={BLT} />
+        <pre
+            contentEditable
             className="BringListEdit-textarea"
-            onChange={(event => dispatch(setBringListTemplate(event.target.value)))}
-            value={blt}
-        />
+            onChange={(event: React.ChangeEvent<HTMLPreElement>) => dispatch(setBringListTemplate(event.target.innerText))}
+        >{BLT}</pre>
     </div>
 }
 

@@ -1,6 +1,8 @@
 .BringListEdit-textarea {
     width: 100%;
     min-height: 50em;
+    border: solid 1px grey;
+    padding: 4px;
 }
 
 .BringListEdit-CompileStatus {
