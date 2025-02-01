@@ -1,4 +1,5 @@
 .BringListEdit-textarea {
+    field-sizing: content;
     width: 100%;
     min-height: 50em;
     border: solid 1px grey;

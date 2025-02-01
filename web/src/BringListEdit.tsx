@@ -3,7 +3,7 @@ import { getBLTWarnings, parseBLTChecked, warningToString } from "./filterspec"
 import { Header, Nav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
-import { useMemo } from "react"
+import React, { useMemo } from "react"
 
 function CompileStatus(props: { blt: string }): React.ReactElement {
     const compileResult = useMemo(() => parseBLTChecked(props.blt), [props.blt])
@@ -49,12 +49,11 @@ function BringListEdit() {
         />
         <Nav />
         <CompileStatus blt={BLT} />
-        <pre
-            contentEditable
+        <textarea
             className="BringListEdit-textarea"
-            onChange={(event: React.ChangeEvent<HTMLPreElement>) => dispatch(setBringListTemplate(event.target.innerText))}
-        >{BLT}</pre>
-    </div>
+            onInput={(event) => dispatch(setBringListTemplate(event.currentTarget.value))}
+        >{BLT}</textarea>
+    </div >
 }
 
 export default BringListEdit
