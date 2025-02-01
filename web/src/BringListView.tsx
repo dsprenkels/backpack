@@ -51,7 +51,7 @@ function BringList(props: {
   const annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
     [cat, filterspec.exprIsMatch(props.filter, cat.tags)]
 
-  return <>
+  return <div className='BringListView-bringList'>
     {props.bringList
       .map(annotate)
       .filter(([, { isMatch }]) => isMatch)
@@ -68,7 +68,7 @@ function BringList(props: {
           updateStrikedItems={props.updateStrikedItems}
         />
       ))}
-  </>
+  </div>
 }
 
 function BringListCategory(props: {

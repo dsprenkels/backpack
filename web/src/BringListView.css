@@ -206,3 +206,9 @@
 .BringListView-bringListItemCheckbox {
   margin-right: 1ex;
 }
+
+@media print {
+  .BringListView-bringList {
+    columns: 2;
+  }
+}
