@@ -1,15 +1,32 @@
 import "./BringListEdit.css"
-import { getBLTWarnings, parseBLTChecked, warningToString } from "./filterspec"
+import { BLTWarning, BringList, warningToString } from "./filterspec"
 import { Header, Nav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
-import React, { useMemo } from "react"
+import React, { useEffect, useState } from "react"
+import BLTCompileWorker from './worker?worker'
+
+const bltCompileWorker = new BLTCompileWorker()
 
 function CompileStatus(props: { blt: string }): React.ReactElement {
-    const compileResult = useMemo(() => parseBLTChecked(props.blt), [props.blt])
-    const warnings = useMemo(() => !(compileResult instanceof Error) ? getBLTWarnings(compileResult) : [], [compileResult])
+    const [compileResult, setCompileResult] = useState<BringList | Error | null>(null)
+    const [warnings, setWarnings] = useState<BLTWarning[]>([])
 
-    if (compileResult instanceof Error) {
+    useEffect(() => {
+        bltCompileWorker.addEventListener('message', (event) => {
+            const { compileResult, warnings } = event.data
+            setCompileResult(compileResult)
+            setWarnings(warnings)
+        }, { once: true })
+        bltCompileWorker.postMessage(props.blt)
+    }, [props.blt])
+
+    if (compileResult === null) {
+        return <span className="BringListEdit-CompileStatus BringListEdit-CompileInfo">
+            compiling...
+        </span>
+    }
+    else if (compileResult instanceof Error) {
         return (
             <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
                 compile error: {compileResult.message}

@@ -266,6 +266,7 @@ function BringListView() {
   const dispatch = useAppDispatch()
 
   const BLT = useAppSelector((s) => s.bringList.bringListTemplate)
+  // TODO: Parse the BLT in store on a background worker
   const BL = useMemo(() => filterspec.parseBLT(BLT), [BLT])
   const checkedItems = new Set(useAppSelector((s) => s.bringList.checked))
   const strikedItems = new Set(useAppSelector((s) => s.bringList.striked))

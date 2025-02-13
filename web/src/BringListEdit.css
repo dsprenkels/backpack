@@ -18,6 +18,7 @@
     color: red;
 }
 
-.BringListEdit-CompileWarn {
+.BringListEdit-CompileWarn,
+.BringListEdit-CompileInfo {
     color: darkblue;
 }
