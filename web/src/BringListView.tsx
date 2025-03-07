@@ -31,9 +31,9 @@ function Tag(props: {
   onSelectTag: (tag: string, enabled: boolean) => void,
 }) {
   const baseClass =
-    "inline-flex justify-start m-0.5 px-2 rounded-sm hover:underline cursor-pointer  transition";
+    "inline-flex justify-start m-0.5 px-2 rounded-sm hover:underline cursor-pointer transition";
   const unselectedClass = "bg-red-100 border-1 border-slate-400 print:hidden";
-  const selectedClass = "bg-green-300 border-1 border-slate-800 font-medium shadow";
+  const selectedClass = "not-print:bg-green-300 border-1 border-slate-800 font-medium not-print:shadow";
   return (
     <li
       className={`${baseClass} ${props.selected ? selectedClass : unselectedClass}`}
@@ -140,14 +140,25 @@ function BringListItem(props: {
   }
   return (
     // Each list item is its own "group" so that its explanation is shown only on hover
-    <li className="print:min-h-4 flex flex-row gap-0 items-center group">
-      <span className=""><input
-        className="form-checkbox print:h-4 print:w-4 text-blue-600 mr-2"
+    <li className="print:min-h-4 flex flex-row gap-2 items-center align-middle group">
+      <input
+        className="print:hidden form-checkbox"
         type="checkbox"
         onChange={(event) => props.setIsChecked(event.target.checked)}
         checked={props.isChecked}
-      /></span>
-      <span className={props.isChecked ? "line-through" : ""}>{itemText}</span>
+      />
+      <svg
+        className="not-print:hidden fill-none stroke-neutral-400"
+        width="20px"
+        height="20px"
+        viewBox="0 0 12 12"
+      >
+        <rect x="2" y="2" width="8" height="8" strokeWidth="1"></rect>
+        {props.isChecked && (
+          <text x="4" y="8" fontSize="10" stroke="black" fontWeight="600">✓</text>
+        )}
+      </svg>
+      <span className={props.isChecked ? "not-print:line-through" : ""}>{itemText}</span>
       {/* This explanation is hidden by default and only shows when this list item is hovered */}
       <BringListExplain
         isTrue={props.isTrue}
@@ -212,7 +223,7 @@ function Settings(props: {
       </div>
     ) : null;
 
-  const buttonClass = "px-4 py-2 shadow rounded cursor-pointer transition disabled:opacity-30 disabled:cursor-not-allowed";
+  const buttonClass = "px-4 py-2 not-print:shadow rounded cursor-pointer transition disabled:opacity-30 disabled:cursor-not-allowed";
   let resetButton;
   if (resetConfirming) {
     resetButton = (
@@ -231,7 +242,7 @@ function Settings(props: {
   } else {
     resetButton = (
       <input
-        className={`${buttonClass} px-4 py-2 bg-yellow-400 shadow`}
+        className={`${buttonClass} px-4 py-2 bg-yellow-400`}
         type="button"
         value="reset everything"
         onClick={() => {
@@ -309,7 +320,7 @@ function BringListView() {
            Static properties are defined in index.css */
         @page {
           @top-left {
-            content: "${header ? `Backpack: ${header}` : "Backpack"}";
+            content: "${header ? `${header} · Backpack` : "Backpack"}";
           }
           @top-right {
             content: "geprint op ${new Date().toLocaleDateString()}";
