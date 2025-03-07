@@ -10,7 +10,6 @@ export interface State {
         bringListTemplate: string,
         tags: string[],
         checked: string[],
-        striked: string[],
         nights: number,
         header: string,
     }
@@ -19,7 +18,6 @@ export interface State {
 export const setBringListTemplate = createAction<string>('bringlist/setTemplate')
 export const setTagEnabled = createAction<[string, boolean]>('bringlist/setTagEnabled')
 export const setChecked = createAction<[string, boolean]>('bringlist/setChecked')
-export const setStriked = createAction<[string, boolean]>('bringlist/setStriked')
 export const setNights = createAction<number>('bringlist/setNights')
 export const setHeader = createAction<string>('bringlist/setHeader')
 export const resetAllExceptTemplate = createAction('bringlist/resetAllExceptTemplate')
@@ -30,7 +28,6 @@ function startingState(): State {
             bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
             tags: [],
             checked: [],
-            striked: [],
             nights: 3,
             header: '',
         }
@@ -62,15 +59,6 @@ const bringListReducer = createReducer(initialState, builder => {
                 state.bringList.checked.sort()
             } else {
                 state.bringList.checked = state.bringList.checked.filter(t => t !== item)
-            }
-        })
-        .addCase(setStriked, (state, action) => {
-            const [item, striked] = action.payload
-            if (striked) {
-                state.bringList.striked.push(item)
-                state.bringList.striked.sort()
-            } else {
-                state.bringList.striked = state.bringList.striked.filter(t => t !== item)
             }
         })
         .addCase(setNights, (state, action) => {

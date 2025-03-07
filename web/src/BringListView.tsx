@@ -1,7 +1,6 @@
 import { AppContainer, HeadNav } from './Layout';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
-import { CloseIcon } from "./icons";
-import { resetAllExceptTemplate, setChecked, setHeader, setNights, setStriked, setTagEnabled } from './store';
+import { resetAllExceptTemplate, setChecked, setHeader, setNights, setTagEnabled } from './store';
 import { useAppDispatch, useAppSelector } from './hooks';
 import { useMemo, useState } from 'react';
 import * as filterspec from './filterspec';
@@ -49,8 +48,6 @@ function BringList(props: {
   filter: Filter,
   checkedItems: Set<string>,
   updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: Set<string>,
-  updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   const annotate = (cat: BLC): [BLC, ExprIsMatchResult] =>
     [cat, filterspec.exprIsMatch(props.filter, cat.tags)];
@@ -68,8 +65,6 @@ function BringList(props: {
             filter={props.filter}
             checkedItems={props.checkedItems}
             updateCheckedItems={props.updateCheckedItems}
-            strikedItems={props.strikedItems}
-            updateStrikedItems={props.updateStrikedItems}
           />
         ))}
     </div>
@@ -83,8 +78,6 @@ function BringListCategory(props: {
   filter: Filter,
   checkedItems: Set<string>,
   updateCheckedItems: (name: string, isChecked: boolean) => void,
-  strikedItems: Set<string>,
-  updateStrikedItems: (name: string, isStriked: boolean) => void,
 }) {
   const annotate = (item: Item): [Item, ExprIsMatchResult] =>
     [item, filterspec.exprIsMatch(props.filter, item.tags)];
@@ -114,8 +107,6 @@ function BringListCategory(props: {
               filter={props.filter}
               isChecked={props.checkedItems.has(item.name)}
               setIsChecked={(isChecked) => props.updateCheckedItems(item.name, isChecked)}
-              isStriked={props.strikedItems.has(item.name)}
-              setIsStriked={(isStriked) => props.updateStrikedItems(item.name, isStriked)}
             />
           ))}
       </ul>
@@ -140,8 +131,6 @@ function BringListItem(props: {
   filter: Filter,
   isChecked: boolean,
   setIsChecked: (isChecked: boolean) => void,
-  isStriked: boolean,
-  setIsStriked: (isStriked: boolean) => void,
 }) {
   let itemText = props.item.name;
   const everyNNights = props.item.everyNNights;
@@ -151,18 +140,14 @@ function BringListItem(props: {
   }
   return (
     // Each list item is its own "group" so that its explanation is shown only on hover
-    <li className={`print:min-h-4 flex flex-row gap-0 items-center group ${props.isStriked ? "print:hidden" : ""}`}>
+    <li className="print:min-h-4 flex flex-row gap-0 items-center group">
       <span className=""><input
         className="form-checkbox print:h-4 print:w-4 text-blue-600 mr-2"
         type="checkbox"
         onChange={(event) => props.setIsChecked(event.target.checked)}
         checked={props.isChecked}
-        disabled={props.isStriked}
       /></span>
-      <span className={props.isStriked ? "line-through" : ""}>{itemText}</span>
-      <span onClick={() => props.setIsStriked(!props.isStriked)}>
-        <CloseIcon className="mx-auto text-red-600 transition opacity-50 print:hidden hover:opacity-100" />
-      </span>
+      <span className={props.isChecked ? "line-through" : ""}>{itemText}</span>
       {/* This explanation is hidden by default and only shows when this list item is hovered */}
       <BringListExplain
         isTrue={props.isTrue}
@@ -293,7 +278,6 @@ function BringListView() {
   const BLT = useAppSelector((s) => s.bringList.bringListTemplate);
   const BL = useMemo(() => filterspec.parseBLT(BLT), [BLT]);
   const checkedItems = new Set(useAppSelector((s) => s.bringList.checked));
-  const strikedItems = new Set(useAppSelector((s) => s.bringList.striked));
   const tags = new Set(useAppSelector((s) => s.bringList.tags));
   const nights = useAppSelector((s) => s.bringList.nights);
   const header = useAppSelector((s) => s.bringList.header);
@@ -318,10 +302,6 @@ function BringListView() {
         checkedItems={checkedItems}
         updateCheckedItems={(name: string, isChecked: boolean) => {
           dispatch(setChecked([name, isChecked]));
-        }}
-        strikedItems={strikedItems}
-        updateStrikedItems={(name: string, isStriked: boolean) => {
-          dispatch(setStriked([name, isStriked]));
         }}
       />
       <style>{`
