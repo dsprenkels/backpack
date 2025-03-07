@@ -13,18 +13,20 @@
   "dependencies": {
     "react": "^18",
     "react-dom": "^18",
-    "react-redux": "^9"
+    "react-redux": "^9",
+    "tailwindcss": "^4.0.9"
   },
   "devDependencies": {
     "@eslint/js": "^9",
     "@reduxjs/toolkit": "^2",
+    "@tailwindcss/vite": "^4.0.9",
     "@testing-library/react": "^13",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^4",
     "eslint": "^9",
-    "globals": "^15",
     "eslint-plugin-react": "^7",
+    "globals": "^15",
     "react-router-dom": "^6",
     "typescript": "^4",
     "typescript-eslint": "^8",

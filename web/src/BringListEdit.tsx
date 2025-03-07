@@ -1,6 +1,5 @@
-import "./BringListEdit.css"
 import { BLTWarning, BringList, warningToString } from "./filterspec"
-import { Header, Nav } from "./Layout"
+import { AppContainer, HeadNav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"
 import React, { useEffect, useState } from "react"
@@ -22,13 +21,13 @@ function CompileStatus(props: { blt: string }): React.ReactElement {
     }, [props.blt])
 
     if (compileResult === null) {
-        return <span className="BringListEdit-CompileStatus BringListEdit-CompileInfo">
+        return <span className="font-semibold text-slate-500">
             compiling...
         </span>
     }
     else if (compileResult instanceof Error) {
         return (
-            <span className="BringListEdit-CompileStatus BringListEdit-CompileErr">
+            <span className="font-semibold text-red-700">
                 compile error: {compileResult.message}
             </span>
         )
@@ -41,14 +40,14 @@ function CompileStatus(props: { blt: string }): React.ReactElement {
                 fragments.push(<br key={`warning_${i - 1}_br`} />)
             }
             fragments.push(
-                <span key={`warning_${i}`} className="BringListEdit-CompileStatus BringListEdit-CompileWarn">
+                <span key={`warning_${i}`} className="font-semibold text-yellow-600">
                     warning: {warningToString(warning)}
                 </span>
             )
         }
         return <>{fragments}</>
     } else {
-        return <span className="BringListEdit-CompileStatus BringListEdit-CompileOk">
+        return <span className="font-semibold text-green-700">
             compilation succeeded
         </span>
     }
@@ -59,18 +58,17 @@ function BringListEdit() {
     const header = useAppSelector(state => state.bringList.header)
     const BLT = useAppSelector(state => state.bringList.bringListTemplate)
 
-    return <div className="BringListEdit">
-        <Header
+    return <AppContainer>
+        <HeadNav
             header={header}
             setHeader={(header) => dispatch(setHeader(header))}
         />
-        <Nav />
         <CompileStatus blt={BLT} />
         <textarea
-            className="BringListEdit-textarea"
+            className="w-full min-h-[50rem] border-1 border-neutral-300 inset-shadow-xs p-2 field-sizing-content"
             onInput={(event) => dispatch(setBringListTemplate(event.currentTarget.value))}
         >{BLT}</textarea>
-    </div >
+    </AppContainer>
 }
 
 export default BringListEdit
