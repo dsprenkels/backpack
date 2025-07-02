@@ -1,8 +1,8 @@
 import { AppContainer, HeadNav } from './Layout';
 import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
-import { resetAllExceptTemplate, setChecked, setHeader, setNights, setTagEnabled } from './store';
+import { resetAllExceptTemplate, setChecked, setHeader, setNights, setTagEnabled, fetchHelloMessage } from './store';
 import { useAppDispatch, useAppSelector } from './hooks';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as filterspec from './filterspec';
 
 function TagList(props: {
@@ -293,6 +293,11 @@ function BringListView() {
   const nights = useAppSelector((s) => s.bringList.nights);
   const header = useAppSelector((s) => s.bringList.header);
   const filter = { tags, nights };
+  const helloMessage = useAppSelector((s) => s.helloMessage);
+
+  useEffect(() => {
+    dispatch(fetchHelloMessage());
+  }, [dispatch]);
 
   return (
     <AppContainer>
@@ -307,6 +312,14 @@ function BringListView() {
         setNights={(nights) => dispatch(setNights(nights))}
         doResetAll={() => dispatch(resetAllExceptTemplate())}
       />
+      <>
+        {import.meta.env.DEV && (
+          helloMessage && (
+            <div className="my-2 p-2 bg-blue-100 rounded text-blue-900">
+              {helloMessage}
+            </div>
+          ))}
+      </>
       <BringList
         bringList={BL}
         filter={filter}
