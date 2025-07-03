@@ -1,4 +1,4 @@
-import { BLTWarning, BringList, warningToString } from "./filterspec"
+import { BLTWarning, BringList, warningToString } from "@/lib/filterspec"
 import { AppContainer, HeadNav } from "./Layout"
 import { useAppDispatch, useAppSelector } from "./hooks"
 import { setBringListTemplate, setHeader } from "./store"

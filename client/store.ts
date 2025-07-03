@@ -1,6 +1,6 @@
 import { configureStore, createAction, createAsyncThunk, createListenerMiddleware, createReducer } from '@reduxjs/toolkit'
-import DEFAULT_BRINGLIST_TEMPLATE from './template'
-import { trpc } from './trpc'
+import DEFAULT_BRINGLIST_TEMPLATE from '@/lib/template'
+import { trpc } from '@/client/trpc'
 
 // --- Type Definitions ---
 export interface KeyValueDict<T> {

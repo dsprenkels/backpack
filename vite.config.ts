@@ -7,6 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   root: './client',
   base: "/backpack/",
+  resolve: {
+    alias: {
+      '@': __dirname,
+    },
+  },
   server: {
     proxy: {
       '/backpack/api': {

@@ -1,9 +1,9 @@
 import { AppContainer, HeadNav } from './Layout';
-import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from './filterspec';
+import { BringList as BL, BringListCategory as BLC, ExprIsMatchResult, Filter, Item } from '@/lib/filterspec';
 import { resetAllExceptTemplate, setChecked, setHeader, setNights, setTagEnabled, fetchHelloMessage } from './store';
 import { useAppDispatch, useAppSelector } from './hooks';
 import { useEffect, useMemo, useState } from 'react';
-import * as filterspec from './filterspec';
+import * as filterspec from '@/lib/filterspec';
 
 function TagList(props: {
   allTags: string[],
@@ -55,8 +55,8 @@ function BringList(props: {
     <div className="container print-two-column space-y-8">
       {props.bringList
         .map(annotate)
-        .filter(([, { isMatch }]) => isMatch)
-        .map(([blc, { isTrue, isFalse }]) => (
+        .filter(([, { isMatch }]: [BLC, ExprIsMatchResult]) => isMatch)
+        .map(([blc, { isTrue, isFalse }]: [BLC, { isTrue: string[], isFalse: string[] }]) => (
           <BringListCategory
             key={blc.category}
             BLC={blc}
@@ -97,13 +97,13 @@ function BringListCategory(props: {
       <ul className="pl-0 list-none m-0 my-2 space-y-1">
         {props.BLC.items
           .map(annotate)
-          .filter(([, { isMatch }]) => isMatch)
-          .map(([item, { isTrue, isFalse }]) => (
+          .filter(([, matchResult]: [Item, ExprIsMatchResult]) => matchResult.isMatch)
+          .map(([item, matchResult]: [Item, ExprIsMatchResult]) => (
             <BringListItem
               key={item.name}
               item={item}
-              isTrue={isTrue}
-              isFalse={isFalse}
+              isTrue={matchResult.isTrue}
+              isFalse={matchResult.isFalse}
               filter={props.filter}
               isChecked={props.checkedItems.has(item.name)}
               setIsChecked={(isChecked) => props.updateCheckedItems(item.name, isChecked)}

@@ -1,4 +1,4 @@
-import { BLTWarning, BringList, getBLTWarnings, parseBLTChecked } from "./filterspec";
+import { BLTWarning, BringList, getBLTWarnings, parseBLTChecked } from "@/lib/filterspec";
 
 type MessageEventData = string
 interface MessagePostData {
