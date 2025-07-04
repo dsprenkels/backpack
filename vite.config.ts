@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, UserConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   root: './client',
+  publicDir: '../public',
   base: "/backpack/",
   resolve: {
     alias: {
@@ -25,4 +26,4 @@ export default defineConfig({
     outDir: '../dist/client',
     emptyOutDir: true,
   }
-})
+}) satisfies UserConfig
