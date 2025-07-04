@@ -32,8 +32,8 @@ function Tag(props: {
 }) {
   const baseClass =
     "inline-flex justify-start m-0.5 px-2 rounded-sm hover:underline cursor-pointer transition";
-  const unselectedClass = "bg-red-100 border-1 border-slate-400 print:hidden";
-  const selectedClass = "not-print:bg-green-300 border-1 border-slate-800 font-medium not-print:shadow";
+  const unselectedClass = "bg-red-100 border-1 border-zinc-400 dark:bg-red-800 dark:border-zinc-500 print:hidden ";
+  const selectedClass = "not-print:bg-green-300 border-1 border-zinc-800 dark:not-print:bg-green-800 dark:border-zinc-400 font-medium not-print:shadow";
   return (
     <li
       className={`${baseClass} ${props.selected ? selectedClass : unselectedClass}`}
@@ -177,14 +177,14 @@ function BringListExplain(props: {
   const explainList: JSX.Element[] = [];
   for (const tag of props.isTrue) {
     explainList.push(
-      <span key={tag} className="text-green-700">
+      <span key={tag} className="text-green-700 dark:text-green-300">
         {tag}
       </span>
     );
   }
   for (const tag of props.isFalse) {
     explainList.push(
-      <span key={tag} className="text-red-700">
+      <span key={tag} className="text-red-700 dark:text-red-300">
         !{tag}
       </span>
     );
@@ -197,7 +197,7 @@ function BringListExplain(props: {
     }
   }
   return (
-    <span className={`text-sm font-normal text-neutral-500 align-middle mx-4 ${props.className ?? ""}`}>
+    <span className={`text-sm font-normal text-zinc-500 dark:text-zinc-300 align-middle mx-4 dark:text-zinc-400 ${props.className ?? ""}`}>
       [ {explainJSX} ]
     </span>
   );
@@ -218,7 +218,7 @@ function Settings(props: {
 
   const noneSelectedElement =
     props.tags.size === 0 ? (
-      <div className="not-print:hidden print:inline-flex text-gray-500 italic">
+      <div className="not-print:hidden print:inline-flex text-zinc-500 italic dark:text-zinc-400">
         no tags selected
       </div>
     ) : null;
@@ -228,7 +228,7 @@ function Settings(props: {
   if (resetConfirming) {
     resetButton = (
       <input
-        className={`${buttonClass} px-4 py-2 bg-red-600 text-white font-bold transition`}
+        className={`${buttonClass} px-4 py-2 bg-red-600 text-white font-bold transition dark:bg-red-800`}
         type="button"
         value="click again to confirm"
         onClick={() => {
@@ -242,7 +242,7 @@ function Settings(props: {
   } else {
     resetButton = (
       <input
-        className={`${buttonClass} px-4 py-2 bg-yellow-400`}
+        className={`${buttonClass} px-4 py-2 bg-yellow-400 dark:bg-yellow-700 dark:text-yellow-100`}
         type="button"
         value="reset everything"
         onClick={() => {
@@ -267,7 +267,7 @@ function Settings(props: {
         <div className="not-print:my-2 inline-flex items-center">
           <h3 className="inline-flex text-lg font-semibold my-0 mr-2">Nachten:</h3>
           <input
-            className="print:hidden mx-2 max-w-[8ch] border border-neutral-400 p-1 rounded focus:outline-none focus:ring focus:border-blue-300 transition"
+            className="print:hidden mx-2 max-w-[8ch] border border-neutral-400 p-1 rounded focus:outline-none focus:ring focus:border-blue-300 transition dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600"
             type="number"
             min="1"
             value={props.nights}
@@ -315,7 +315,7 @@ function BringListView() {
       <>
         {import.meta.env.DEV && (
           helloMessage && (
-            <div className="my-2 p-2 bg-blue-100 rounded text-blue-900">
+            <div className="my-2 p-2 bg-blue-100 rounded text-blue-900 dark:bg-blue-950 dark:text-blue-200">
               {helloMessage}
             </div>
           ))}

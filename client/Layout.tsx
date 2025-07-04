@@ -7,7 +7,7 @@ const HEADER_MAX_WIDTH = 50
 export function AppContainer(props: {
     children: React.ReactNode,
 }) {
-    return <div className="items-center container mx-auto max-w-4xl font-mono text-sm not-print:text-slate-800">
+    return <div className="items-center container mx-auto max-w-4xl font-mono text-sm not-print:text-zinc-800 dark:not-print:text-zinc-100">
         {props.children}
     </div>
 }
@@ -27,7 +27,7 @@ function Header(props: {
     setHeader: (header: string) => void,
 }) {
     const inputFieldGrowPadding = 2
-    const border = props.header === "" ? "not-print:border-1 border-gray-400" : ""
+    const border = props.header === "" ? "not-print:border-1 border-gray-400 dark:border-zinc-500" : ""
     return (
         <header className="text-4xl font-bold m-6">
             <input
@@ -42,7 +42,7 @@ function Header(props: {
 }
 
 function Nav() {
-    const baseClass = "hover:underline text-blue-700"
+    const baseClass = "hover:underline text-blue-700 dark:text-blue-300";
     const activeClass = "font-bold";
     const inactiveClass = "";
     const className = ({ isActive }: { isActive: boolean }) =>

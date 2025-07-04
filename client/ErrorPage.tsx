@@ -8,9 +8,9 @@ export function ErrorPage() {
     console.error(error)
 
     return (
-        <div className="ErrorPage">
+        <div className="ErrorPage bg-white text-red-700 dark:bg-zinc-900 dark:text-red-400 min-h-screen flex flex-col items-center justify-center">
             <h1>Error: {error.statusText}</h1>
-            <p><Link to="/">Return to main view</Link></p>
+            <p><Link to="/" className="text-blue-700 dark:text-blue-300 underline">Return to main view</Link></p>
         </div>
     )
 }
