@@ -1,8 +1,9 @@
 // Example Express.js server with tRPC endpoint
 
-import express from 'express'
+import * as express from 'express'
 import * as trpcExpress from '@trpc/server/adapters/express'
 import { initTRPC } from '@trpc/server'
+
 
 const t = initTRPC.create()
 
