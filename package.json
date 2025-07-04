@@ -8,8 +8,8 @@
     "client:dev": "vite",
     "client:build": "vite build",
     "client:preview": "vite preview",
-    "server:dev": "nodemon --exec tsx server/main.ts",
-    "server:build": "ncc build server/main.ts -o dist/server",
+    "server:dev": "nodemon --exec ncc run server/main.ts",
+    "server:build": "ncc build --out dist/server server/main.ts",
     "test": "vitest",
     "lint": "eslint"
   },

@@ -7,5 +7,4 @@
   "[css]": {
     "editor.defaultFormatter": "vscode.css-language-features",
   },
-  "tailwindCSS.rootFontSize": 10,
 }
