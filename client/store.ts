@@ -1,6 +1,11 @@
 import { configureStore, createAction, createAsyncThunk, createListenerMiddleware, createReducer } from '@reduxjs/toolkit'
 import DEFAULT_BRINGLIST_TEMPLATE from '@/lib/template'
 import { trpc } from '@/client/trpc'
+import SuperJSON from 'superjson'
+
+const LOCAL_STORAGE_KEY_V1 = 'com.electricdusk.backpack.v1.state'
+const LOCAL_STORAGE_KEY_V2 = 'com.electricdusk.backpack.v2.state'
+const LOCAL_STORAGE_KEY_LATEST = LOCAL_STORAGE_KEY_V2
 
 // --- Type Definitions ---
 export interface KeyValueDict<T> {
@@ -10,8 +15,8 @@ export interface KeyValueDict<T> {
 export interface State {
     bringList: {
         bringListTemplate: string,
-        tags: string[],
-        checked: string[],
+        tags: Set<string>,
+        checked: Set<string>,
         nights: number,
         header: string,
     },
@@ -39,8 +44,8 @@ function startingState(): State {
     return {
         bringList: {
             bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
-            tags: [],
-            checked: [],
+            tags: new Set(),
+            checked: new Set(),
             nights: 3,
             header: '',
         },
@@ -49,8 +54,15 @@ function startingState(): State {
 }
 
 function initialState(): State {
-    const stored = localStorage.getItem('com.electricdusk.backpack.v1.state')
-    return (stored ? JSON.parse(stored) : startingState())
+    let stored = localStorage.getItem(LOCAL_STORAGE_KEY_V2)
+    if (stored) {
+        return SuperJSON.parse(stored) as State
+    }
+    stored = localStorage.getItem(LOCAL_STORAGE_KEY_V1)
+    if (stored) {
+        return JSON.parse(stored) as State
+    }
+    return startingState()
 }
 
 // --- Reducers ---
@@ -60,20 +72,20 @@ const bringListReducer = createReducer(initialState, builder => {
     })
         .addCase(setTagEnabled, (state, action) => {
             const [tag, enabled] = action.payload
+            state.bringList.tags = new Set(state.bringList.tags)
             if (enabled) {
-                state.bringList.tags.push(tag)
-                state.bringList.tags.sort()
+                state.bringList.tags.add(tag)
             } else {
-                state.bringList.tags = state.bringList.tags.filter(t => t !== tag)
+                state.bringList.tags.delete(tag)
             }
         })
         .addCase(setChecked, (state, action) => {
             const [item, checked] = action.payload
+            state.bringList.checked = new Set(state.bringList.checked)
             if (checked) {
-                state.bringList.checked.push(item)
-                state.bringList.checked.sort()
+                state.bringList.checked.add(item)
             } else {
-                state.bringList.checked = state.bringList.checked.filter(t => t !== item)
+                state.bringList.checked.delete(item)
             }
         })
         .addCase(setNights, (state, action) => {
@@ -98,7 +110,7 @@ localStorageMiddleware.startListening({
     predicate: (action) => action.type.startsWith('bringlist/'),
     effect: (action, api) => {
         const state = api.getState() as State
-        localStorage.setItem('com.electricdusk.backpack.v1.state', JSON.stringify(state))
+        localStorage.setItem(LOCAL_STORAGE_KEY_LATEST, SuperJSON.stringify(state))
     }
 })
 
