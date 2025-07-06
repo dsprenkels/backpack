@@ -5,7 +5,6 @@ import * as trpcExpress from '@trpc/server/adapters/express'
 import { Pool, } from 'pg'
 import { autoMigrate } from '@/server/migrations'
 import { initTRPC } from '@trpc/server'
-import superjson from 'superjson'
 
 // Create a PostgreSQL connection pool
 for (const envVar of ['PGUSER', 'PGPASSWORD', 'PGHOST', 'PGPORT', 'PGDATABASE']) {
@@ -33,9 +32,7 @@ try {
 }
 
 // Define tRPC router
-const t = initTRPC.create({
-    transformer: superjson,
-})
+const t = initTRPC.create()
 const appRouter = t.router({
     hello: t.procedure.query(() => {
         const rand = Math.floor(Math.random() * 1000)
