@@ -11,42 +11,39 @@
       "server:dev": "nodemon --exec ncc run server/index.ts",
       "server:build": "ncc build --out dist/server server/index.ts",
       "test": "vitest",
-      "lint": "eslint"
+      "lint": "eslint",
+      "typecheck": "vue-tsc --noEmit"
    },
    "dependencies": {
-      "@tanstack/react-query": "^5.81.5",
       "@trpc/client": "^11.4.3",
-      "@trpc/react-query": "^11.4.3",
       "@trpc/server": "^11.4.3",
       "express": "^5.1.0",
       "pg": "^8.14.1",
-      "react": "^18",
-      "react-dom": "^18",
-      "react-redux": "^9",
+      "pinia": "^3",
       "reflect-metadata": "^0.2.2",
-      "tailwindcss": "^4.0.9"
+      "tailwindcss": "^4.0.9",
+      "vue": "^3.5",
+      "vue-router": "^4"
    },
    "devDependencies": {
       "@eslint/js": "^9",
-      "@reduxjs/toolkit": "^2",
       "@tailwindcss/vite": "^4.0.9",
-      "@testing-library/react": "^13",
       "@types/express": "^5.0.3",
       "@types/node": "^22.13.10",
       "@types/pg": "^8.15.4",
-      "@types/react": "^18",
-      "@types/react-dom": "^18",
       "@vercel/ncc": "^0.38.3",
-      "@vitejs/plugin-react": "^4",
+      "@vitejs/plugin-vue": "^6",
+      "@vue/test-utils": "^2",
       "concurrently": "^9.2.0",
       "eslint": "^9",
-      "eslint-plugin-react": "^7",
+      "eslint-plugin-vue": "^10",
       "globals": "^15",
+      "jsdom": "^26",
       "nodemon": "^3.1.10",
-      "react-router-dom": "^6",
       "typescript": "5.8.3",
       "typescript-eslint": "^8",
       "vite": "^6",
-      "vitest": "^3"
+      "vitest": "^3",
+      "vue-tsc": "^3"
    }
 }

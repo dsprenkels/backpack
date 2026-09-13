@@ -1,41 +1,26 @@
-import { configureStore, createAction, createAsyncThunk, createListenerMiddleware, createReducer } from '@reduxjs/toolkit'
+import { defineStore } from 'pinia'
+import { ref, watch } from 'vue'
 import DEFAULT_BRINGLIST_TEMPLATE from '@/lib/template'
 import { trpc } from '@/client/trpc'
 
+const STORAGE_KEY = 'com.electricdusk.backpack.v1.state'
+
 // --- Type Definitions ---
-export interface KeyValueDict<T> {
-    [key: string]: T
+export interface BringListState {
+    bringListTemplate: string,
+    tags: string[],
+    checked: string[],
+    nights: number,
+    header: string,
 }
 
-export interface State {
-    bringList: {
-        bringListTemplate: string,
-        tags: string[],
-        checked: string[],
-        nights: number,
-        header: string,
-    },
+export interface PersistedState {
+    bringList: BringListState,
     helloMessage: string | null,
 }
 
-// --- Action Creators ---
-export const setBringListTemplate = createAction<string>('bringlist/setTemplate')
-export const setTagEnabled = createAction<[string, boolean]>('bringlist/setTagEnabled')
-export const setChecked = createAction<[string, boolean]>('bringlist/setChecked')
-export const setNights = createAction<number>('bringlist/setNights')
-export const setHeader = createAction<string>('bringlist/setHeader')
-export const resetAllExceptTemplate = createAction('bringlist/resetAllExceptTemplate')
-export const setHelloMessage = createAction<string>('hello/setMessage')
-export const fetchHelloMessage = createAsyncThunk(
-    'hello/fetchMessage',
-    async (_, { dispatch }) => {
-        const result = await trpc.hello.query()
-        dispatch(setHelloMessage(result.message))
-    }
-)
-
 // --- State Initialization ---
-function startingState(): State {
+function startingState(): PersistedState {
     return {
         bringList: {
             bringListTemplate: DEFAULT_BRINGLIST_TEMPLATE,
@@ -48,66 +33,81 @@ function startingState(): State {
     }
 }
 
-function initialState(): State {
-    const stored = localStorage.getItem('com.electricdusk.backpack.v1.state')
-    return (stored ? JSON.parse(stored) : startingState())
+function loadState(): PersistedState {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        return stored ? JSON.parse(stored) : startingState()
+    } catch (error) {
+        console.warn('failed to load stored state, starting fresh', error)
+        return startingState()
+    }
 }
 
-// --- Reducers ---
-const bringListReducer = createReducer(initialState, builder => {
-    builder.addCase(setBringListTemplate, (state, action) => {
-        state.bringList.bringListTemplate = action.payload
-    })
-        .addCase(setTagEnabled, (state, action) => {
-            const [tag, enabled] = action.payload
-            if (enabled) {
-                state.bringList.tags.push(tag)
-                state.bringList.tags.sort()
-            } else {
-                state.bringList.tags = state.bringList.tags.filter(t => t !== tag)
-            }
-        })
-        .addCase(setChecked, (state, action) => {
-            const [item, checked] = action.payload
-            if (checked) {
-                state.bringList.checked.push(item)
-                state.bringList.checked.sort()
-            } else {
-                state.bringList.checked = state.bringList.checked.filter(t => t !== item)
-            }
-        })
-        .addCase(setNights, (state, action) => {
-            state.bringList.nights = action.payload
-        })
-        .addCase(setHeader, (state, action) => {
-            state.bringList.header = action.payload
-        })
-        .addCase(resetAllExceptTemplate, (state) => {
-            const template = state.bringList.bringListTemplate
-            state.bringList = startingState().bringList
-            state.bringList.bringListTemplate = template
-        })
-        .addCase(setHelloMessage, (state, action) => {
-            state.helloMessage = action.payload
-        })
-})
+// --- Store ---
+export const useBringListStore = defineStore('bringList', () => {
+    const loaded = loadState()
+    const bringList = ref<BringListState>(loaded.bringList)
+    const helloMessage = ref<string | null>(loaded.helloMessage)
 
-// --- Middleware ---
-const localStorageMiddleware = createListenerMiddleware()
-localStorageMiddleware.startListening({
-    predicate: (action) => action.type.startsWith('bringlist/'),
-    effect: (action, api) => {
-        const state = api.getState() as State
-        localStorage.setItem('com.electricdusk.backpack.v1.state', JSON.stringify(state))
+    function setBringListTemplate(template: string) {
+        bringList.value.bringListTemplate = template
+    }
+
+    function setTagEnabled(tag: string, enabled: boolean) {
+        if (enabled) {
+            bringList.value.tags.push(tag)
+            bringList.value.tags.sort()
+        } else {
+            bringList.value.tags = bringList.value.tags.filter(t => t !== tag)
+        }
+    }
+
+    function setChecked(item: string, checked: boolean) {
+        if (checked) {
+            bringList.value.checked.push(item)
+            bringList.value.checked.sort()
+        } else {
+            bringList.value.checked = bringList.value.checked.filter(t => t !== item)
+        }
+    }
+
+    function setNights(nights: number) {
+        bringList.value.nights = nights
+    }
+
+    function setHeader(header: string) {
+        bringList.value.header = header
+    }
+
+    function resetAllExceptTemplate() {
+        const template = bringList.value.bringListTemplate
+        bringList.value = { ...startingState().bringList, bringListTemplate: template }
+    }
+
+    async function fetchHelloMessage() {
+        try {
+            const result = await trpc.hello.query()
+            helloMessage.value = result.message
+        } catch (error) {
+            console.warn('hello query failed', error)
+        }
+    }
+
+    // --- Persistence ---
+    watch(bringList, () => {
+        const state: PersistedState = { bringList: bringList.value, helloMessage: helloMessage.value }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    }, { deep: true })
+
+    return {
+        bringList,
+        helloMessage,
+        setBringListTemplate,
+        setTagEnabled,
+        setChecked,
+        setNights,
+        setHeader,
+        resetAllExceptTemplate,
+        fetchHelloMessage,
     }
 })
-
-// --- Store Configuration ---
-export const store = configureStore({
-    reducer: bringListReducer,
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(localStorageMiddleware.middleware),
-})
-
-// --- Exports ---
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch

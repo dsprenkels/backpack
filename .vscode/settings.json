@@ -7,4 +7,7 @@
   "[css]": {
     "editor.defaultFormatter": "vscode.css-language-features",
   },
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar",
+  },
 }

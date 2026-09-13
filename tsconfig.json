@@ -14,11 +14,10 @@
     "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "sourceMap": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx"
+    "isolatedModules": true
   },
   "include": ["client", "server", "lib"],
   "references": [{ "path": "./tsconfig.node.json" }]
